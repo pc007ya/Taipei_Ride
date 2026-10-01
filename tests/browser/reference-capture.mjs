@@ -26,10 +26,13 @@ try {
       if (result.challenge) {
         result.status = 'blocked-by-challenge-no-interaction';
       } else {
-        const start = page.getByRole('button', { name: /^(開始遊戲|開始冒險|進入遊戲|開始|Start Game|Play)$/i });
-        if (await start.count() === 1 && await start.isVisible()) {
-          await start.click();
-          await page.waitForTimeout(8_000);
+        // The verified public menu exposes a bilingual accessible name.
+        const start = page.getByRole('button', { name: /^(開始遊戲\s*Start Game|開始遊戲|開始冒險|進入遊戲|開始|Start Game|Play)$/i });
+        if (await start.count() === 1) {
+          await start.waitFor({ state: 'visible', timeout: 90_000 });
+          // Normal actionability waits for any loading overlay to leave.
+          await start.click({ timeout: 90_000 });
+          await page.waitForTimeout(15_000);
           await page.screenshot({ path: `${dir}/${name}-after-start.png`, fullPage: true });
           result.status = 'captured-entry-and-start';
         } else result.status = 'captured-visible-entry';

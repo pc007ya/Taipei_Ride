@@ -38,7 +38,7 @@ jobs:
       - name: Install official Chromium and runtime dependencies
         run: npx playwright install --with-deps chromium
       - name: Install Traditional Chinese screenshot fonts
-        run: sudo apt-get install -y fonts-noto-cjk
+        run: node tests/browser/install-ci-font.mjs
       - name: Run live WebGL browser tests
         run: npm run test:browser -- --project=${{ matrix.project }}
       - uses: actions/upload-artifact@v4
@@ -69,7 +69,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: sudo apt-get install -y fonts-noto-cjk
+      - run: node tests/browser/install-ci-font.mjs
       - name: Capture public reference separately
         run: node tests/browser/reference-capture.mjs
       - uses: actions/upload-artifact@v4

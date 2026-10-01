@@ -33,6 +33,8 @@ The reference site's source code was not available to this implementation. This 
 
 ## Development-only tooling
 
+CI screenshot runners install a single Noto Sans CJK TC font from the official [notofonts/noto-cjk](https://github.com/notofonts/noto-cjk) source, pinned and integrity-checked by the test setup. It is licensed under the SIL Open Font License 1.1; the upstream license is installed beside the font on the temporary runner. No font files are copied into this repository or the static game build.
+
 Automated DOM-flow tests use jsdom 26.1.0 (MIT) and its npm dependencies. These development packages are pinned in package-lock.json and are not included in the static game bundle. Their package license files remain with the installed development dependencies.
 
 - **@playwright/test 1.63.0**, Playwright and playwright-core are development-only browser-test tools, licensed under **Apache License 2.0**. Official project: [microsoft/playwright](https://github.com/microsoft/playwright). Their complete license files are retained in the installed development packages at `node_modules/@playwright/test/LICENSE`, `node_modules/playwright/LICENSE` and `node_modules/playwright-core/LICENSE`. They and the downloaded Chromium test browser are not included in the static game bundle. Chromium retains its own upstream and bundled-component licenses.

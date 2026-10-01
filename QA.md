@@ -48,6 +48,13 @@ First live checkpoint: [run 36873918648](https://github.com/pc007ya/Taipei_Ride/
 
 Follow-up changes preserve all required interactions and assertions, remove continuous trace screencasting (explicit screenshots remain), and allow longer wall-clock budgets for software graphics. The long continuous delivery route uses a standard 1280×720 desktop viewport to reduce software-GPU fill cost; the separate desktop UI smoke test retains 1440×960. Visual review also found landscape map alignment clipping the initial map; the map is now top-aligned and has a new unit test plus a browser viewport-bounds assertion. Inspect the exact latest commit's completed jobs and screenshot artifacts for the rerun outcome; configuration or a queued run alone does not count as success.
 
+Second live checkpoint: [run 36875789810](https://github.com/pc007ya/Taipei_Ride/actions/runs/36875789810), commit `2fdf5da787c43285fe6fd7637731248f80d7181b`:
+
+- Unit/build passed with 52 tests; portrait and landscape browser flows passed again
+- The new landscape map bounds assertion passed, and the corrected full-map screenshot was visually inspected
+- The reference site opened without a CAPTCHA or JavaScript error, but captured only its loading/entry view; a verified bilingual Start button is used by the subsequent capture revision
+- The desktop runner remained in the Ubuntu font download step at this checkpoint. The next revision replaces the 61.2 MB distro font bundle with one 16.4 MB official Noto TC face, pinned by revision and Git blob hash with bounded retries, solely for CI screenshots
+
 ## Verification limits
 
 DOM-flow tests simulate a document with jsdom and stub drawing calls. They are not real-browser end-to-end tests. Offline scene inspection is not a screenshot of the WebGL renderer.
