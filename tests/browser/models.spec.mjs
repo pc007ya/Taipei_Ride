@@ -28,7 +28,7 @@ test('production models in real WebGL: rider contacts, street scale and props', 
     renderer.toneMappingExposure = 1.1;
     window.inspection = { THREE, models, applyCharacterPalette, scale, createWorld, renderer };
   });
-  for (const shot of ['rider-left', 'rider-right', 'two-character-models', 'street-residents', 'human-vehicle-building-scale', 'tree-lamp-scale']) {
+  for (const shot of ['rider-left', 'rider-right', 'two-character-models', 'two-character-profiles', 'street-residents', 'human-vehicle-building-scale', 'tree-lamp-scale']) {
     const evidence = await page.evaluate(shot => {
       const { THREE, models, applyCharacterPalette, scale, createWorld, renderer } = window.inspection;
       const scene = new THREE.Scene();
@@ -39,7 +39,7 @@ test('production models in real WebGL: rider contacts, street scale and props', 
       const group = new THREE.Group(); scene.add(group);
       const floor = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), new THREE.MeshStandardMaterial({ color: 0xbcc8bb, roughness: 1 }));
       floor.rotation.x = -Math.PI / 2; floor.position.y = -.05; scene.add(floor);
-      const sizes = {};
+      const sizes = {}, characters = {};
       function visibleBounds(object) {
         object.updateWorldMatrix(true, true);
         const bounds = new THREE.Box3();
@@ -54,6 +54,7 @@ test('production models in real WebGL: rider contacts, street scale and props', 
         object.position.set(x, 0, z); group.add(object);
         const bounds = visibleBounds(object);
         sizes[name] = bounds.getSize(new THREE.Vector3()).toArray();
+        if (object.userData.character) characters[name] = object.userData.character;
         return object;
       }
       let camera;
@@ -64,12 +65,12 @@ test('production models in real WebGL: rider contacts, street scale and props', 
         add('mountedScooter', scooter);
         document.querySelector('#title').textContent = shot === 'rider-left' ? 'Cheng · mounted rider, left/front inspection' : 'Qing · mounted rider, right/rear inspection';
         document.querySelector('#caption').textContent = 'Production seated pose: saddle contact, hands at grips, shoes on the footboard';
-      } else if (shot === 'two-character-models') {
+      } else if (['two-character-models', 'two-character-profiles'].includes(shot)) {
         const cheng = models.createWalker(undefined, true, 'male'), qing = models.createWalker(undefined, true, 'female');
         applyCharacterPalette(cheng, 'sunset'); applyCharacterPalette(qing, 'river');
         add('Cheng', cheng, 0, -5);
         add('Qing', qing, 0, 5);
-        document.querySelector('#title').textContent = 'Cheng and Qing · production character geometry';
+        document.querySelector('#title').textContent = shot === 'two-character-profiles' ? 'Cheng and Qing · rear/side hair and silhouette inspection' : 'Cheng and Qing · production character geometry';
         document.querySelector('#caption').textContent = 'Original head, hair, hands, clothing, articulated limbs and shoes at their real shared scale';
       } else if (shot === 'street-residents') {
         add('warmClothedResident', models.createPedestrian(0xc78062), 0, -5);
@@ -107,7 +108,7 @@ test('production models in real WebGL: rider contacts, street scale and props', 
         const center = bounds.getCenter(new THREE.Vector3());
         const radius = bounds.getSize(new THREE.Vector3()).length() / 2;
         camera = new THREE.PerspectiveCamera(40, aspect, .1, 1800);
-        const direction = shot === 'rider-right' ? new THREE.Vector3(-1.5, .7, -3) : ['two-character-models', 'street-residents'].includes(shot) ? new THREE.Vector3(3, .5, 1.2) : new THREE.Vector3(1.2, .7, 3);
+        const direction = shot === 'rider-right' ? new THREE.Vector3(-1.5, .7, -3) : shot === 'two-character-profiles' ? new THREE.Vector3(-3, .5, 1.2) : ['two-character-models', 'street-residents'].includes(shot) ? new THREE.Vector3(3, .5, 1.2) : new THREE.Vector3(1.2, .7, 3);
         camera.position.copy(center).addScaledVector(direction.normalize(), radius / Math.sin(THREE.MathUtils.degToRad(20)) * 1.1);
         camera.lookAt(center);
       }
@@ -118,7 +119,7 @@ test('production models in real WebGL: rider contacts, street scale and props', 
       // keep the nonempty-image threshold unchanged and retain the evidence.
       gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
       for (let offset = 0; offset < pixels.length; offset += 16) colors.add(`${pixels[offset]},${pixels[offset + 1]},${pixels[offset + 2]},${pixels[offset + 3]}`);
-      return { shot, webgl2: gl instanceof WebGL2RenderingContext, contextLost: gl.isContextLost(), glError: gl.getError(), width: gl.drawingBufferWidth, height: gl.drawingBufferHeight, sampledPixels: Math.ceil(pixels.length / 16), uniqueColors: colors.size, sizes, camera: camera.position.toArray(), calls: renderer.info.render.calls };
+      return { shot, webgl2: gl instanceof WebGL2RenderingContext, contextLost: gl.isContextLost(), glError: gl.getError(), width: gl.drawingBufferWidth, height: gl.drawingBufferHeight, sampledPixels: Math.ceil(pixels.length / 16), uniqueColors: colors.size, sizes, characters, camera: camera.position.toArray(), calls: renderer.info.render.calls };
     }, shot);
     await testInfo.attach(`${shot}-evidence`, { body: JSON.stringify(evidence, null, 2), contentType: 'application/json' });
     const path = testInfo.outputPath(`${shot}.png`);
@@ -128,6 +129,7 @@ test('production models in real WebGL: rider contacts, street scale and props', 
     expect(evidence.contextLost).toBe(false);
     expect(evidence.glError).toBe(0);
     expect(evidence.uniqueColors).toBeGreaterThan(15);
+    if (shot.startsWith('two-character')) expect(evidence.characters).toEqual({ Cheng: 'male', Qing: 'female' });
   }
   expect(errors).toEqual([]);
 });

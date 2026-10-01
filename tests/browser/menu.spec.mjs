@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { clickCurrentTarget, selectSetting, startJourney } from './controls.mjs';
+import { activateWithKeyboard, observePresentationKeys, selectSetting, startJourney } from './controls.mjs';
 
 const snapshot = page => page.evaluate(() => window.taipeiRide.snapshot());
 const position = state => ({ x: state.player.x, y: state.player.y, angle: state.player.angle });
@@ -17,6 +17,7 @@ test('live WebGL introduction and menu: interruption, settings, help and return'
   // The OS accessibility preference is a real browser input, not a changed
   // animation clock. Explicit replay/skip is exercised below with motion on.
   await page.emulateMedia({ reducedMotion: 'reduce' });
+  await observePresentationKeys(page);
   await page.goto('/');
   await page.waitForFunction(() => window.taipeiRide?.snapshot().menu);
   await expect.poll(async () => (await snapshot(page)).menu.phase).toBe('menu');
@@ -88,12 +89,14 @@ test('live WebGL introduction and menu: interruption, settings, help and return'
   await capture('menu-04-intro-transition');
   await expect.poll(async () => (await snapshot(page)).menu.phase).toBe('menu');
   await page.locator('#menu-settings').click();
-  await page.locator('#replay-intro').click();
-  // A short, real-time intro can finish while locator.click waits for multiple
-  // stable software-GPU frames. Read its actual current hit target once, then
-  // send normal native pointer/touch input without changing the game clock.
-  await clickCurrentTarget(page, '#skip-intro', isMobile);
+  // Replay/skip is separate from the natural-playback screenshot above. Send
+  // the two documented native keys back-to-back, without GPU frame waits.
+  await activateWithKeyboard(page, '#replay-intro');
+  await page.keyboard.press('Escape');
   await expect.poll(async () => (await snapshot(page)).menu.phase).toBe('menu');
+  const skipEvidence = await page.evaluate(() => window.__presentationKeys);
+  expect(skipEvidence.some(event => event.code === 'Escape' && event.trusted && event.phase === 'intro')).toBe(true);
+  await testInfo.attach('trusted-title-skip-input', { body: JSON.stringify(skipEvidence, null, 2), contentType: 'application/json' });
   expect((await snapshot(page)).started).toBe(false);
   expect(position(await snapshot(page))).toEqual(position(initial));
 

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { clickCurrentTarget, selectSetting, startJourney } from './controls.mjs';
+import { activateWithKeyboard, observePresentationKeys, selectSetting, startJourney } from './controls.mjs';
 
 const snapshot = page => page.evaluate(() => window.taipeiRide.snapshot());
 const pose = state => ({ x: state.player.x, y: state.player.y, angle: state.player.angle, distance: state.player.distance });
@@ -10,13 +10,14 @@ async function capture(page, testInfo, name) {
   await testInfo.attach(name, { path, contentType: 'image/png' });
 }
 
-test('new arrival uses the live scene, locks movement, skips and stays seen', async ({ page, isMobile }, testInfo) => {
+test('new arrival uses the live scene, locks movement, completes and stays seen', async ({ page, isMobile }, testInfo) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
   await page.waitForFunction(() => window.taipeiRide);
   const initial = await snapshot(page);
-  await page.locator('#start').click();
+  await expect.poll(async () => (await snapshot(page)).menu.phase).toBe('menu');
+  await activateWithKeyboard(page, '#start');
   await expect.poll(async () => (await snapshot(page)).cinematic).toBe(true);
   await page.keyboard.down('w');
   await page.waitForFunction(() => {
@@ -29,9 +30,10 @@ test('new arrival uses the live scene, locks movement, skips and stays seen', as
   expect(pose(greeting)).toEqual(pose(initial));
   expect(greeting.quest).toEqual(initial.quest);
   await capture(page, testInfo, 'arrival-01-greeting');
-  await page.keyboard.up('w');
-  await clickCurrentTarget(page, '#skip-arrival', isMobile);
+  // Let the unmodified 8.4-second presentation finish while forward remains
+  // held. Its completion must clear input rather than start driving the actor.
   await expect.poll(async () => (await snapshot(page)).cinematic).toBe(false);
+  await page.keyboard.up('w');
   const skipped = await snapshot(page);
   expect(skipped.menu.arrivalSeen).toBe(true);
   expect(skipped.paused).toBe(false);
@@ -46,6 +48,25 @@ test('new arrival uses the live scene, locks movement, skips and stays seen', as
   expect(resumed.menu.arrivalSeen).toBe(true);
   expect(pose(resumed)).toEqual(pose(initial));
   expect(errors).toEqual([]);
+});
+
+test('fresh arrival accepts an immediate trusted keyboard skip', async ({ page }, testInfo) => {
+  await observePresentationKeys(page);
+  await page.goto('/');
+  await page.waitForFunction(() => window.taipeiRide);
+  await expect.poll(async () => (await snapshot(page)).menu.phase).toBe('menu');
+  const initial = await snapshot(page);
+  await activateWithKeyboard(page, '#start');
+  await page.keyboard.press('Escape');
+  await expect.poll(async () => (await snapshot(page)).cinematic).toBe(false);
+  const evidence = await page.evaluate(() => window.__presentationKeys);
+  expect(evidence.some(event => event.code === 'Escape' && event.trusted && event.arrivalActive)).toBe(true);
+  const after = await snapshot(page);
+  expect(after.menu.arrivalSeen).toBe(true);
+  expect(after.paused).toBe(false);
+  expect(pose(after)).toEqual(pose(initial));
+  expect(after.quest).toEqual(initial.quest);
+  await testInfo.attach('trusted-arrival-skip-input', { body: JSON.stringify(evidence, null, 2), contentType: 'application/json' });
 });
 
 test('pause dashboard, control tabs, HUD preferences and actual mouse look', async ({ page, isMobile }, testInfo) => {

@@ -40,6 +40,10 @@ The next live run also needs to validate the 8.4-second original arrival scene w
 
 CI has no physical controller attached. Gamepad mapping, dead zones, edge-triggered actions, disconnect and neutral-release behavior have unit coverage, and browser tests record API availability. This does not establish real-controller hardware behavior or physical audio output.
 
+[Run 36940930870](https://github.com/pc007ya/Taipei_Ride/actions/runs/36940930870), commit `005b94072ff478ffd1c0e6b62cf4c83fe223b001`, passed verify, all five runtime collision cases, the complete delivery journey, all production-model inspections and the full portrait browser job. Desktop gameplay and actual mouse sensitivity/inverted-Y/FPS/HUD/pause controls passed; landscape gameplay, arrival and dashboard/control flows passed. The overall run still failed: desktop's arrival screenshot work outlasted the 8.4-second clip before its later Skip lookup, and desktop/landscape title replays could finish before the first post-click bounds lookup.
+
+The final harness revision separates unmodified natural playback/screenshots from immediate keyboard skipping. It focuses the visible launch/replay button before the timed presentation, sends native Enter then Escape, and requires read-only event evidence that a trusted Escape was received while the corresponding presentation was active. No game timing, rendering or input handlers are replaced. Character inspection also includes a rear/side view and explicit factory character metadata, so the female ponytail is not hidden by a front-facing camera.
+
 ## Previous baseline: commit df30b3f
 
 [Run 36885386269](https://github.com/pc007ya/Taipei_Ride/actions/runs/36885386269) completed successfully for commit `df30b3fae0e471c3553bef0ef93f7e788ae2336d`: 62 tests/build, three live WebGL viewport flows, and the complete normal-keyboard delivery journey. Desktop smoke took 2.3 minutes at 1440×960; delivery took 12.4 minutes at 1280×720. The actual drawing buffer adapted to scale 0.55 while CSS/UI dimensions remained unchanged. Reward, persistence and reset passed. This baseline predates the model, scale, collision and menu changes described above.

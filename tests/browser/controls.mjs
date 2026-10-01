@@ -1,5 +1,27 @@
 import { expect } from '@playwright/test';
 
+export async function observePresentationKeys(page) {
+  // Read-only evidence is installed before the app's capturing handlers. It
+  // never prevents input, invokes a game action, or changes presentation time.
+  await page.addInitScript(() => {
+    const evidence = [];
+    Object.defineProperty(window, '__presentationKeys', { value: evidence });
+    window.addEventListener('keydown', event => {
+      if (!['Enter', 'Escape'].includes(event.code)) return;
+      const state = window.taipeiRide?.snapshot();
+      evidence.push({ code: event.code, trusted: event.isTrusted, timestamp: performance.now(), phase: state?.menu.phase, arrivalActive: Boolean(state?.menu.arrival.active) });
+    }, true);
+  });
+}
+
+export async function activateWithKeyboard(page, selector) {
+  // All actionability/layout waiting happens before a short presentation starts.
+  await page.locator(selector).scrollIntoViewIfNeeded();
+  await expect(page.locator(selector)).toBeVisible();
+  await page.locator(selector).focus();
+  await page.keyboard.press('Enter');
+}
+
 export async function clickCurrentTarget(page, selector, isMobile = false) {
   const bounds = await page.locator(selector).boundingBox();
   expect(bounds, `${selector} must be visible before native input`).not.toBeNull();
