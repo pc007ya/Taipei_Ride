@@ -4,7 +4,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 const scenario=process.env.SCENARIO || 'controls';
 const out=`test-results/original-${scenario}`;await mkdir(out,{recursive:true});
 const result={scenario,url:'https://taipei-gta.vercel.app/',startedAt:new Date().toISOString(),events:[],errors:[]};
-const physical=['walk','walk-light','drive','wanted','mrt-entry'].includes(scenario);
+const physical=['walk','walk-light','drive','wanted','mrt-entry','tree-contact','light-contact','traffic-drive'].includes(scenario);
 const viewport=physical?{width:640,height:426}:{width:960,height:640};
 const t0=Date.now();
 const log=s=>console.log(`[${Date.now()-t0}ms] ${s}`);
@@ -68,9 +68,30 @@ try{
   }else if(scenario==='mrt-entry'){
    // Public map places the nearest Ximen station ahead-left of the start position.
    await page.keyboard.press('t');await page.getByRole('button',{name:'捷運',exact:true}).click();
-   await page.getByRole('button',{name:/^西門\s*Ximen/}).click();await page.keyboard.press('t');await snap('03-mrt-navigation');
+   await page.getByRole('button',{name:/^西門\s*Ximen/}).click();await snap('03-mrt-navigation');
    await pressMove(['w','a','Shift'],60000);await page.keyboard.press('e');await snap('04-mrt-approach-interact');
    await pressMove(['w','Shift'],60000);await page.keyboard.press('e');await snap('05-mrt-entry-interact');
+  }else if(scenario==='tree-contact'){
+   // Replay the screenshot-verified route ending immediately right of the first tree.
+   await pressMove(['a'],18000);await pressMove(['w'],105000);await snap('03-tree-right-side');
+   await pressMove(['s'],4000);await pressMove(['a'],10000);await snap('04-tree-contact-attempt');
+   await pressMove(['a'],10000);await snap('05-tree-continued-pressure');
+  }else if(scenario==='light-contact'){
+   // Prior image has the gray light pole just ahead-right of this curbside position.
+   await pressMove(['a'],18000);await pressMove(['w'],60000);await snap('03-light-left-side');
+   await pressMove(['w'],8000);await pressMove(['d'],8000);await snap('04-light-contact-attempt');
+   await pressMove(['d'],10000);await snap('05-light-continued-pressure');
+  }else if(scenario==='traffic-drive'){
+   // Normal foot movement into the first visible traffic lane; F is the documented boarding key.
+   await pressMove(['a'],30000);await snap('03-first-traffic-lane');
+   for(let i=1;i<=12;i++){
+    await page.waitForTimeout(3500);await page.keyboard.press('f');await page.waitForTimeout(1000);
+    const visible=await page.locator('body').innerText();
+    if(/km\/h|kmh|時速|公里\/小時|RPM|轉速|引擎|駕駛/i.test(visible)){result.vehicleHudObserved=true;await snap('04-vehicle-hud-observed');break;}
+    if(i===4||i===8||i===12)await snap(`04-traffic-boarding-${i}`);
+   }
+   await pressMove(['w'],10000);await snap('05-traffic-forward');
+   await page.keyboard.press('Escape');await snap('06-traffic-pause');
   }else if(scenario==='wanted'){
    log('Normal left-button attacks near the visible sidewalk NPC group');
    for(let i=0;i<6;i++){await page.mouse.down();await page.waitForTimeout(50);await page.mouse.up();await page.waitForTimeout(700);}

@@ -10,9 +10,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        scenario: [walk, walk-light, drive, mrt-entry]
+        scenario: [tree-contact, light-contact, traffic-drive, mrt-entry]
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
