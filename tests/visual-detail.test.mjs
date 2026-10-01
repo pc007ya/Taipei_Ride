@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {Box3,Vector3,Matrix4,Raycaster} from '../vendor/three.module.js';
+import {Box3,Vector3,Matrix4,Raycaster,Color} from '../vendor/three.module.js';
 import {createWorld,ROADS,ROAD_WIDTH} from '../src/world.js';
 import {createCity,createScooter,createWalker,createPedestrian,createCar,createTree,createLamp,SHOP_NAMES,RIDER_CONTACTS} from '../src/renderer3d.js';
 import {PERSON,SCOOTER,CAR,BUILDING} from '../src/scale.js';
@@ -21,6 +21,8 @@ test('human anatomy, articulated poses and facial/clothing geometry use one phys
 test('street residents retain anatomy in a cached single colored mesh at human height',()=>{
  const a=createPedestrian(),b=createPedestrian();assert.equal(a.isMesh,true);assert.equal(a.geometry,b.geometry);assert.equal(a.material,b.material);
  assert.ok(a.geometry.attributes.position.count>1000);assert.ok(a.geometry.attributes.color.count>1000);
+ const colors=a.geometry.attributes.color,distinct=new Set();for(let i=0;i<colors.count;i++)distinct.add([colors.getX(i),colors.getY(i),colors.getZ(i)].map(n=>n.toFixed(4)).join(','));assert.ok(distinct.size>5,'Baking an already compacted person must preserve cloth, skin, hair and shoe colors');const shirt=new Color(0x8f9b79);assert.ok(Array.from({length:colors.count},(_,i)=>i).some(i=>Math.abs(colors.getX(i)-shirt.r)<1e-5&&Math.abs(colors.getY(i)-shirt.g)<1e-5&&Math.abs(colors.getZ(i)-shirt.b)<1e-5),'NPC shirt tint survives the second vertex-color bake');
+ const key=color=>new Color(color).toArray().map(n=>n.toFixed(4)).join(',');for(const color of [0xbb8965,0x242c2b,0x263e47])assert.ok(distinct.has(key(color)),'Skin, hair and pants retain their authored colors');const other=createPedestrian(0xa3543c),attribute=other.geometry.attributes.color,otherColors=new Set();for(let i=0;i<attribute.count;i++)otherColors.add([attribute.getX(i),attribute.getY(i),attribute.getZ(i)].map(n=>n.toFixed(4)).join(','));assert.ok(otherColors.has(key(0xa3543c)));assert.notDeepEqual(otherColors,distinct,'Different NPC clothing colors remain visually different');
  const bounds=visibleBounds(a);assert.ok(bounds.max.y>16.6&&bounds.max.y<17.5);assert.ok(bounds.max.z-bounds.min.z<PERSON.radius*2+.01);
 });
 

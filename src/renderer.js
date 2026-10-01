@@ -1,14 +1,21 @@
 import { WORLD_SIZE, ROADS, ROAD_WIDTH, LANDMARKS, distance } from './world.js';
 import { QUEST_STATIONS } from './session.js';
 import { BUILDING } from './scale.js';
+import { createLookController } from './camera-controls.js';
 const mix=(hex,k)=>{const n=parseInt(hex.slice(1),16);return `rgb(${[n>>16,(n>>8)&255,n&255].map(v=>Math.round(Math.min(255,v*k))).join(',')})`;};
 export class Renderer {
-  constructor(canvas,world) { this.canvas=canvas;this.ctx=canvas.getContext('2d',{alpha:false});this.world=world;this.camera={x:800,y:515};this.width=0;this.height=0;this.scale=1;this.night=false;this.time=0;this.resize(); }
-  setQuality(preset){this.quality=['auto','low','medium','high'].includes(preset)?preset:'auto';this.resize();}
+  constructor(canvas,world) { this.canvas=canvas;this.lookController=createLookController();this.ctx=canvas.getContext('2d',{alpha:false});this.world=world;this.camera={x:800,y:515};this.width=0;this.height=0;this.scale=1;this.night=false;this.time=0;this.resize(); }
+  setQuality(preset){this.quality=['auto','low','medium','high','ultra'].includes(preset)?preset:'auto';this.resize();}
   setAppearance(id){this.appearance=id==='river'?'river':id==='sunset'?'sunset':'forest';this.playerShirt={river:'#536e98',sunset:'#b97545',forest:'#6b8b77'}[this.appearance];}
+  setLookSettings(settings){this.lookController.configure(settings);}
+  adjustLook(dx,dy){this.lookController.adjust(dx,dy);}
+  getViewMetrics(){return {...this.lookController.snapshot(),quality:this.quality||'auto',menuView:this.menuView||'city',arrivalProgress:typeof this.arrivalProgress==='number'?this.arrivalProgress:null,position:[this.camera.x,0,this.camera.y]};}
+  getPerformanceMetrics(){return {fps:this.observedFps??null,drawCalls:null,triangles:null};}
+  setArrivalProgress(progress){this.arrivalProgress=typeof progress==='number'?Math.max(0,Math.min(1,progress)):null;}
+  resetCamera(player){this.lookController.reset();this.camera.x=player.x;this.camera.y=player.y;}
   setMenuView(view){this.menuView=view;}
   setIntroProgress(progress){this.introProgress=typeof progress==='number'?progress:null;}
-  resize() {const dpr=Math.min(devicePixelRatio||1,{low:.75,medium:1.2,high:1.6,auto:1.6}[this.quality||'auto']);this.width=innerWidth;this.height=innerHeight;this.canvas.width=Math.round(this.width*dpr);this.canvas.height=Math.round(this.height*dpr);this.canvas.style.width=`${this.width}px`;this.canvas.style.height=`${this.height}px`;this.ctx.setTransform(dpr,0,0,dpr,0,0);this.scale=this.width<650?1.45:2.0;}
+  resize() {const dpr=Math.min(devicePixelRatio||1,{low:.75,medium:1.2,high:1.6,ultra:2,auto:1.6}[this.quality||'auto']);this.width=innerWidth;this.height=innerHeight;this.canvas.width=Math.round(this.width*dpr);this.canvas.height=Math.round(this.height*dpr);this.canvas.style.width=`${this.width}px`;this.canvas.style.height=`${this.height}px`;this.ctx.setTransform(dpr,0,0,dpr,0,0);this.scale=this.width<650?1.45:2.0;}
   p(x,y,z=0) {return {x:this.width/2+(x-y-this.camera.x+this.camera.y)*.82*this.scale,y:this.height*.55+(x+y-this.camera.x-this.camera.y)*.43*this.scale-z*this.scale};}
   poly(points,fill,stroke) {const c=this.ctx;c.beginPath();points.forEach((p,i)=>i?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y));c.closePath();c.fillStyle=fill;c.fill();if(stroke){c.strokeStyle=stroke;c.lineWidth=.8;c.stroke();}}
   ground(x,y,w,d,color) {this.poly([this.p(x,y),this.p(x+w,y),this.p(x+w,y+d),this.p(x,y+d)],color);}
@@ -137,7 +144,9 @@ export class Renderer {
   }
   render(state,dt) {
     const {player,traffic,stamps,target}=state;const night=typeof this.introProgress==='number'&&this.menuView!=='character'?true:state.night;this.night=night;this.time+=dt;
-    this.camera.x+=(player.x-this.camera.x)*Math.min(1,dt*5);this.camera.y+=(player.y-this.camera.y)*Math.min(1,dt*5);
+    const wall=performance.now();if(this.lastFrameWall&&wall>this.lastFrameWall){const fps=1000/(wall-this.lastFrameWall);this.observedFps=this.observedFps?this.observedFps*.9+fps*.1:fps;}this.lastFrameWall=wall;
+    const view=this.lookController.snapshot();this.camera.x+=(player.x+view.yaw*25-this.camera.x)*Math.min(1,dt*5);this.camera.y+=(player.y+view.pitch*30-this.camera.y)*Math.min(1,dt*5);
+    if(typeof this.arrivalProgress==='number'){const p=this.arrivalProgress,a=p<.22?p/.22:p>.8?(1-p)/.2:1,npc=QUEST_STATIONS.giver;this.camera.x=player.x*(1-a)+(npc.x+29)*a;this.camera.y=player.y*(1-a)+npc.y*a;}
     const c=this.ctx,w=this.width,h=this.height;
     c.clearRect(0,0,w,h);c.fillStyle=night?'#112932':'#8cac9e';c.fillRect(0,0,w,h);
     this.ground(-120,-120,1900,1900,night?'#284741':'#87a782');

@@ -28,7 +28,7 @@ test('production models in real WebGL: rider contacts, street scale and props', 
     renderer.toneMappingExposure = 1.1;
     window.inspection = { THREE, models, applyCharacterPalette, scale, createWorld, renderer };
   });
-  for (const shot of ['rider-left', 'rider-right', 'two-character-models', 'human-vehicle-building-scale', 'tree-lamp-scale']) {
+  for (const shot of ['rider-left', 'rider-right', 'two-character-models', 'street-residents', 'human-vehicle-building-scale', 'tree-lamp-scale']) {
     const evidence = await page.evaluate(shot => {
       const { THREE, models, applyCharacterPalette, scale, createWorld, renderer } = window.inspection;
       const scene = new THREE.Scene();
@@ -71,6 +71,11 @@ test('production models in real WebGL: rider contacts, street scale and props', 
         add('Qing', qing, 0, 5);
         document.querySelector('#title').textContent = 'Cheng and Qing · production character geometry';
         document.querySelector('#caption').textContent = 'Original head, hair, hands, clothing, articulated limbs and shoes at their real shared scale';
+      } else if (shot === 'street-residents') {
+        add('warmClothedResident', models.createPedestrian(0xc78062), 0, -5);
+        add('blueClothedResident', models.createPedestrian(0x719baa), 0, 5);
+        document.querySelector('#title').textContent = 'Street residents · production batched vertex colors';
+        document.querySelector('#caption').textContent = 'Skin, hair, trousers and two different clothing colors must survive the production mesh batching path';
       } else if (shot === 'human-vehicle-building-scale') {
         const source = createWorld().buildings.find(building => building.type === 'building' && building.floorCount === 2);
         if (!source) throw new Error('Expected an actual two-storey city building');
@@ -102,26 +107,27 @@ test('production models in real WebGL: rider contacts, street scale and props', 
         const center = bounds.getCenter(new THREE.Vector3());
         const radius = bounds.getSize(new THREE.Vector3()).length() / 2;
         camera = new THREE.PerspectiveCamera(40, aspect, .1, 1800);
-        const direction = shot === 'rider-right' ? new THREE.Vector3(-1.5, .7, -3) : shot === 'two-character-models' ? new THREE.Vector3(3, .5, 1.2) : new THREE.Vector3(1.2, .7, 3);
+        const direction = shot === 'rider-right' ? new THREE.Vector3(-1.5, .7, -3) : ['two-character-models', 'street-residents'].includes(shot) ? new THREE.Vector3(3, .5, 1.2) : new THREE.Vector3(1.2, .7, 3);
         camera.position.copy(center).addScaledVector(direction.normalize(), radius / Math.sin(THREE.MathUtils.degToRad(20)) * 1.1);
         camera.lookAt(center);
       }
       renderer.render(scene, camera);
-      const gl = renderer.getContext(), pixels = new Uint8Array(4), colors = new Set();
-      for (let y = 1; y < 12; y++) for (let x = 1; x < 16; x++) {
-        gl.readPixels(Math.floor(gl.drawingBufferWidth * x / 16), Math.floor(gl.drawingBufferHeight * y / 12), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-        colors.add([...pixels].join(','));
-      }
-      return { shot, webgl2: gl instanceof WebGL2RenderingContext, contextLost: gl.isContextLost(), glError: gl.getError(), width: gl.drawingBufferWidth, height: gl.drawingBufferHeight, uniqueColors: colors.size, sizes, camera: camera.position.toArray(), calls: renderer.info.render.calls };
+      const gl = renderer.getContext(), pixels = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4), colors = new Set();
+      // The first run's sparse 15×11 grid missed almost all thin lamp/actor
+      // pixels. Sample every fourth pixel throughout the actual framebuffer;
+      // keep the nonempty-image threshold unchanged and retain the evidence.
+      gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+      for (let offset = 0; offset < pixels.length; offset += 16) colors.add(`${pixels[offset]},${pixels[offset + 1]},${pixels[offset + 2]},${pixels[offset + 3]}`);
+      return { shot, webgl2: gl instanceof WebGL2RenderingContext, contextLost: gl.isContextLost(), glError: gl.getError(), width: gl.drawingBufferWidth, height: gl.drawingBufferHeight, sampledPixels: Math.ceil(pixels.length / 16), uniqueColors: colors.size, sizes, camera: camera.position.toArray(), calls: renderer.info.render.calls };
     }, shot);
-    expect(evidence.webgl2).toBe(true);
-    expect(evidence.contextLost).toBe(false);
-    expect(evidence.glError).toBe(0);
-    expect(evidence.uniqueColors).toBeGreaterThan(15);
     await testInfo.attach(`${shot}-evidence`, { body: JSON.stringify(evidence, null, 2), contentType: 'application/json' });
     const path = testInfo.outputPath(`${shot}.png`);
     await page.screenshot({ path, fullPage: true });
     await testInfo.attach(shot, { path, contentType: 'image/png' });
+    expect(evidence.webgl2).toBe(true);
+    expect(evidence.contextLost).toBe(false);
+    expect(evidence.glError).toBe(0);
+    expect(evidence.uniqueColors).toBeGreaterThan(15);
   }
   expect(errors).toEqual([]);
 });

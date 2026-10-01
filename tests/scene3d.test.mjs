@@ -173,3 +173,15 @@ test('3D mode separates parked scooter from walking actor and moves delivery car
  state.mode='riding';player.x=800;r.render(state,.02);assert.equal(r.walker.visible,false);assert.ok(r.scooter.children.filter(p=>p.userData.riderPart).every(p=>p.visible));assert.equal(r.scooter.getObjectByName('delivery-cargo').visible,true);
  state.quest.stage='completed';r.render(state,.02);assert.equal(r.scooter.getObjectByName('delivery-cargo').visible,false);
 });
+
+test('walking wall contact in the observed narrow alley keeps a low lateral camera instead of bird-eye view',async()=>{
+ const {createCameraBlockers,constrainCameraPosition,cameraAimTarget,updateFoliageVisibility}=await import('../src/renderer3d.js');
+ const world=createWorld(),blockers=createCameraBlockers(world),{city,softOccluders}=createCity(world);city.updateMatrixWorld(true);
+ // Production v2 fixture reproduced from the real Chromium contact artifact.
+ for(const y of [272.5982309,274.5982309,277.5982309,279.5962309]){
+  const p={x:242.11621278245,y,angle:-Math.PI/2},camera=new PerspectiveCamera(58,1.5,1,1800),position=constrainCameraPosition(p,chaseCameraPose(p).position,blockers),horizontal=Math.hypot(position.x-p.x,position.z-p.y);
+  assert.ok(horizontal>=28,'There is a clear sideways view along this alley');assert.ok(position.y<=29,'The camera must not jump 7.5 metres above the person');assert.ok(Math.atan2(Math.abs(position.y-11),horizontal)<Math.PI/5,'View remains oblique and operable');
+  camera.position.copy(position);camera.lookAt(cameraAimTarget(p,p.angle,position));camera.updateMatrixWorld(true);updateFoliageVisibility(softOccluders,p,position);
+  for(const height of [10,16]){const point=worldToScene(p.x,p.y,height),screen=point.clone().project(camera);assert.ok(Math.abs(screen.x)<1&&Math.abs(screen.y)<1&&screen.z>-1&&screen.z<1);const ray=new Raycaster(position,point.clone().sub(position).normalize(),.1,position.distanceTo(point)-.2);assert.equal(ray.intersectObject(city,true).filter(h=>h.object.material?.transparent!==true).length,0);}
+ }
+});

@@ -1,0 +1,5 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createArrivalTimeline, ARRIVAL_DURATION_MS } from '../src/arrival.js';
+test('arrival advances through arrival, greeting, chapter and one completion',()=>{const clip=createArrivalTimeline();assert.equal(clip.skip(),false);assert.equal(clip.begin(),true);assert.equal(clip.begin(),false);assert.equal(clip.snapshot().stage,'arriving');clip.advance(1500);assert.equal(clip.snapshot().stage,'greeting');clip.advance(4500);assert.equal(clip.snapshot().stage,'chapter');assert.equal(clip.advance(2400),true);assert.equal(clip.snapshot().active,false);assert.equal(clip.advance(1000),false);assert.equal(clip.skip(),false);});
+test('invalid times and repeated skip cannot leave an active scene behind',()=>{const clip=createArrivalTimeline();clip.begin();for(const value of [NaN,Infinity,-1])clip.advance(value);assert.equal(clip.snapshot().elapsed,0);assert.equal(clip.skip(),true);assert.equal(clip.snapshot().elapsed,ARRIVAL_DURATION_MS);assert.equal(clip.skip(),false);assert.equal(clip.snapshot().active,false);});

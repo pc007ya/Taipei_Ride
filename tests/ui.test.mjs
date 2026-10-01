@@ -23,6 +23,12 @@ function click(id){$(id).click();frame();}
 test('unsupported WebGL automatically falls back with a clear compatibility label',()=>{
  assert.equal(snapshot().started,false);assert.equal(snapshot().renderMode,'2d');for(const key of ['effectiveRenderScale','drawingBufferWidth','drawingBufferHeight','renderCssWidth','renderCssHeight'])assert.equal(snapshot()[key],null);assert.equal($('render-mode').textContent,'2D 相容模式');assert.equal($('stamp-rail').children.length,6);frame();
 });
+test('new journey cinematic locks gameplay until the visible skip control is used',()=>{
+ click('start');assert.equal(snapshot().cinematic,true);assert.equal(snapshot().paused,true);const before=snapshot();
+ for(const code of ['KeyW','KeyE','KeyF','KeyR','KeyM'])key('keydown',code);frame(40);
+ assert.deepEqual(snapshot().player,before.player);assert.deepEqual(snapshot().vehicle,before.vehicle);assert.deepEqual(snapshot().quest,before.quest);assert.equal(snapshot().coins,before.coins);
+ click('skip-arrival');assert.equal(snapshot().cinematic,false);assert.equal(snapshot().paused,false);assert.equal($('arrival-intro').hidden,true);key('keyup','KeyW');
+});
 test('keyboard driving reaches first stamp; collection advances mission and saves',()=>{
  click('start');document.querySelector('#stamp-rail button').click();assert.equal(snapshot().started,true);key('keydown','KeyW');frame(80);key('keyup','KeyW');key('keydown','Space');frame(40);key('keyup','Space');
  const p=snapshot().player;assert.ok(p.y<455&&p.y>365,`Reached market: y=${p.y}`);assert.ok(Math.abs(p.speed)<8);key('keydown','KeyE');frame();assert.deepEqual(snapshot().stamps,['market']);assert.equal(snapshot().target,'tower');assert.equal($('stamp-dialog').open,true);assert.deepEqual(JSON.parse(localStorage.getItem('taipei-ride:v2')).stamps,['market']);
@@ -43,4 +49,21 @@ test('reset confirmation cancel retains stamps; explicit confirmation clears jou
 });
 test('window blur pauses active play and clears inputs',()=>{
  key('keydown','KeyW');window.dispatchEvent(new window.Event('blur'));assert.equal(snapshot().paused,true);assert.equal($('pause-dialog').open,true);
+});
+
+test('canvas drag changes only the compatibility camera and releases on cancel or pause',()=>{
+ click('resume');const canvas=$('world'),before={...snapshot().player},initial=snapshot().view.yaw;
+ const pointer=(type,values)=>{const e=new window.Event(type,{bubbles:true,cancelable:true});for(const[k,v]of Object.entries(values))Object.defineProperty(e,k,{value:v});canvas.dispatchEvent(e);};
+ pointer('pointerdown',{pointerId:31,button:0,clientX:200,clientY:300});pointer('pointermove',{pointerId:31,clientX:300,clientY:330});assert.ok(snapshot().view.yaw>initial+.3);assert.deepEqual(snapshot().player,before);
+ pointer('pointercancel',{pointerId:31});const released=snapshot().view.yaw;pointer('pointermove',{pointerId:31,clientX:500,clientY:330});assert.equal(snapshot().view.yaw,released);
+ key('keydown','KeyP');pointer('pointerdown',{pointerId:32,button:0,clientX:200,clientY:300});pointer('pointermove',{pointerId:32,clientX:500,clientY:450});assert.equal(snapshot().view.yaw,released);click('resume');
+});
+
+test('Gamepad API fixture integrates real actions, camera, pause release and disconnect safely',()=>{
+ const pad={index:0,id:'DOM API fixture',connected:true,axes:[0,0,0,0],buttons:Array.from({length:16},()=>({pressed:false,value:0}))};let pads=[pad];Object.defineProperty(window.navigator,'getGamepads',{configurable:true,value:()=>pads});const button=(i,on)=>pad.buttons[i]={pressed:on,value:on?1:0};
+ frame();assert.equal(snapshot().gamepad.connected,true);button(7,true);pad.axes[2]=.7;const yaw=snapshot().view.yaw;frame(10);assert.equal(snapshot().gamepad.movement.throttle,true);assert.ok(snapshot().player.speed>0);assert.ok(snapshot().view.yaw>yaw);
+ button(9,true);frame();assert.equal(snapshot().paused,true);const pausedPlayer={...snapshot().player};frame(10);assert.deepEqual(snapshot().player,pausedPlayer);assert.equal(snapshot().gamepad.movement.throttle,false);
+ button(9,false);frame();button(9,true);frame();assert.equal(snapshot().paused,false);frame(4);assert.equal(snapshot().gamepad.movement.throttle,false,'Held RT cannot resume without returning to neutral');
+ button(9,false);button(7,false);pad.axes[2]=0;frame();button(7,true);frame();assert.equal(snapshot().gamepad.movement.throttle,true);
+ pads=[];window.dispatchEvent(new window.Event('gamepaddisconnected'));assert.equal(snapshot().gamepad.movement.throttle,false);frame();assert.equal(snapshot().gamepad.connected,false);assert.deepEqual(snapshot().gamepad.look,{x:0,y:0});
 });

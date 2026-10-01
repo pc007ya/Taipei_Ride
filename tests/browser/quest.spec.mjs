@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { startJourney } from './controls.mjs';
 
 const snapshot = page => page.evaluate(() => window.taipeiRide.snapshot());
 
@@ -66,7 +67,7 @@ test('complete original delivery quest through live WebGL and real controls', as
     await page.goto('/');
     await page.waitForFunction(() => window.taipeiRide);
     await expect(page.locator('#render-mode')).toHaveText('3D 漫遊');
-    await page.locator('#start').click();
+    await startJourney(page);
     expect((await snapshot(page)).quest.stage).toBe('available');
     await followRoad(page, [[800, 420]], telemetry);
     await page.keyboard.press('e');
@@ -87,7 +88,7 @@ test('complete original delivery quest through live WebGL and real controls', as
     expect(restored.mode).toBe(beforeReload.mode);
     expect(restored.vehicle.x).toBeCloseTo(beforeReload.vehicle.x, 4);
     expect(restored.vehicle.y).toBeCloseTo(beforeReload.vehicle.y, 4);
-    await page.locator('#start').click();
+    await startJourney(page);
 
     await followRoad(page, [[1120,800], [800,800], [480,800], [160,800], [160,1010]], telemetry);
     await expect.poll(async () => (await snapshot(page)).quest.stage).toBe('deliver');
@@ -109,7 +110,7 @@ test('complete original delivery quest through live WebGL and real controls', as
     expect((await snapshot(page)).quest.stage).toBe('completed');
     expect((await snapshot(page)).coins).toBe(300);
     expect((await snapshot(page)).mode).toBe('walking');
-    await page.locator('#start').click();
+    await startJourney(page);
     await page.keyboard.press('p');
     await page.locator('#reset-trip').click();
     await page.locator('#confirm-reset').click();

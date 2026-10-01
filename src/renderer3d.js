@@ -2,6 +2,7 @@ import * as THREE from '../vendor/three.module.js';
 import { ROADS, ROAD_WIDTH, LANDMARKS } from './world.js';
 import { QUEST_STATIONS } from './session.js';
 import { PERSON, BUILDING } from './scale.js';
+import { createLookController } from './camera-controls.js';
 import { createScooter, createWalker, createPedestrian, createCar, setMountedRiderVisible, bakeColorMeshes, applyCharacterPalette, APPEARANCES } from './models.js';
 export { createScooter, createWalker, createPedestrian, createCar, setMountedRiderVisible, RIDER_CONTACTS } from './models.js';
 // The 2D simulation's (x, y) ground coordinates map to Three.js (x, z).
@@ -39,16 +40,17 @@ function clipCameraSegment(player,desired,blockers,clearance=7){
 export function constrainCameraPosition(player,desired,blockers,clearance=7){
  const focus=worldToScene(player.x,player.y,11),clipped=clipCameraSegment(player,desired,blockers,clearance);
  if(clipped.distanceTo(focus)>=28)return clipped;
- // A wall very close behind the scooter must not force the camera inside the
- // rider/near plane. Temporarily move higher; try side views if a roof blocks it.
- const alternatives=[worldToScene(player.x,player.y,75),worldToScene(player.x+60,player.y,65),worldToScene(player.x-60,player.y,65),worldToScene(player.x,player.y+60,65),worldToScene(player.x,player.y-60,65)];
- let best=clipped;
- for(const candidate of alternatives){const safe=clipCameraSegment(player,candidate,blockers,clearance);if(safe.distanceTo(focus)>=28)return safe;if(safe.distanceTo(focus)>best.distanceTo(focus))best=safe;}
+ // A narrow alley calls for a lateral/closer shoulder view, not an abrupt
+ // overhead jump. Search low alternatives in order of angular departure.
+ const base=Math.atan2(desired.z-player.y,desired.x-player.x),turns=[Math.PI/4,-Math.PI/4,Math.PI/2,-Math.PI/2,3*Math.PI/4,-3*Math.PI/4,Math.PI];let best=clipped;
+ for(const height of [20,28])for(const turn of turns){const angle=base+turn,candidate=worldToScene(player.x+Math.cos(angle)*60,player.y+Math.sin(angle)*60,height),safe=clipCameraSegment(player,candidate,blockers,clearance);if(safe.distanceTo(focus)>=28)return safe;if(safe.distanceTo(focus)>best.distanceTo(focus))best=safe;}
+ // Keep the least-obstructed horizontal view even in a tight corner. The
+ // shorter look target below centers the full person instead of looking at a roof.
  return best;
 }
 export function cameraAimTarget(player,heading,position){
  const fraction=THREE.MathUtils.clamp(Math.hypot(position.x-player.x,position.z-player.y)/66,.1,1);
- return worldToScene(player.x+Math.cos(heading)*12*fraction,player.y+Math.sin(heading)*12*fraction,10+3*(1-fraction));
+ return worldToScene(player.x+Math.cos(heading)*12*fraction,player.y+Math.sin(heading)*12*fraction,8.5+1.5*fraction);
 }
 export function updateFoliageVisibility(foliage,player,cameraPosition=null){
  const focus=worldToScene(player.x,player.y,11),hit=new THREE.Vector3();
@@ -203,10 +205,10 @@ export function createCity(world){
 // Render-only quality control. Timestamps are real wall-clock milliseconds, not
 // the capped simulation dt: neither movement nor quest time is accelerated.
 export class AdaptiveRenderScale{
- constructor(pixelRatio=1){this.minScale=.55;this.ceiling=this.pixelRatioCeiling(pixelRatio);this.scale=this.ceiling;this.resetTiming();}
- pixelRatioCeiling(value){return Math.max(this.minScale,Math.min(1.6,Number.isFinite(value)&&value>0?value:1));}
+ constructor(pixelRatio=1){this.minScale=.55;this.maximum=1.6;this.ceiling=this.pixelRatioCeiling(pixelRatio);this.scale=this.ceiling;this.resetTiming();}
+ pixelRatioCeiling(value){return Math.max(this.minScale,Math.min(this.maximum,Number.isFinite(value)&&value>0?value:1));}
  resetTiming(){this.lastTimestamp=null;this.windowMs=0;this.frames=0;this.slowFrames=0;this.fastMs=0;}
- setCeiling(pixelRatio){this.ceiling=this.pixelRatioCeiling(pixelRatio);this.scale=Math.min(this.scale,this.ceiling);this.resetTiming();return this.scale;}
+ setCeiling(pixelRatio,maximum=this.maximum){this.maximum=Math.max(.55,Math.min(2,maximum));this.ceiling=this.pixelRatioCeiling(pixelRatio);this.scale=Math.min(this.scale,this.ceiling);this.resetTiming();return this.scale;}
  sample(timestamp,visible=true){
   if(!visible||!Number.isFinite(timestamp)){this.resetTiming();return false;}
   if(this.lastTimestamp===null){this.lastTimestamp=timestamp;return false;}
@@ -215,7 +217,7 @@ export class AdaptiveRenderScale{
   if(elapsed<=0){this.resetTiming();this.lastTimestamp=timestamp;return false;}
   this.windowMs+=elapsed;this.frames++;if(elapsed>45)this.slowFrames++;
   if(this.windowMs<3000||this.frames<6)return false;
-  const meanMs=this.windowMs/this.frames,duration=this.windowMs,slowFraction=this.slowFrames/this.frames;this.windowMs=0;this.frames=0;this.slowFrames=0;
+  const meanMs=this.windowMs/this.frames,duration=this.windowMs,slowFraction=this.slowFrames/this.frames;this.observedFps=1000/meanMs;this.windowMs=0;this.frames=0;this.slowFrames=0;
   let next=this.scale;
   // At least 70% slow frames prevents one OS/debugger hitch from forcing a drop.
   if(meanMs>45&&slowFraction>=.7){this.fastMs=0;next=Math.max(this.minScale,this.scale*.8);}
@@ -228,7 +230,7 @@ export class AdaptiveRenderScale{
 }
 export class Renderer3D{
   constructor(canvas,world){
-    this.canvas=canvas;
+    this.canvas=canvas;this.lookController=createLookController();
     // Context creation is the only capability check. If it fails, main.js uses Canvas 2D.
     this.renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
     this.renderScale=new AdaptiveRenderScale(globalThis.devicePixelRatio||1);this.renderer.setPixelRatio(this.renderScale.scale);this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.1;
@@ -241,13 +243,13 @@ export class Renderer3D{
     const created=createCity(world);this.scene.add(created.city);this.glass=created.glass;this.lampMaterial=created.lampMaterial;this.foliage=created.foliage;this.softOccluders=created.softOccluders;
     this.scooter=createScooter();this.scene.add(this.scooter);this.carMeshes=[];
     this.markers=[...LANDMARKS,...Object.values(QUEST_STATIONS)].map(l=>{const g=new THREE.Group();g.position.set(l.x,1,l.y);const ring=new THREE.Mesh(new THREE.TorusGeometry(12,.45,8,40),new THREE.MeshBasicMaterial({color:l.color}));ring.rotation.x=Math.PI/2;g.add(ring);const pin=new THREE.Mesh(new THREE.OctahedronGeometry(2.5,0),new THREE.MeshBasicMaterial({color:l.color}));pin.position.y=23;g.add(pin);this.scene.add(g);return {l,g,ring,pin};});
-    this.questResidents=Object.values(QUEST_STATIONS).map((station,i)=>{const npc=createPedestrian([0xc78062,0x719baa,0xa29968][i],true);npc.name=station.id;applyVehiclePose(npc,{x:station.x+29,y:station.y,angle:Math.PI});this.scene.add(npc);return npc;});
+    this.questResidents=Object.values(QUEST_STATIONS).map((station,i)=>{const npc=createWalker([0xc78062,0x719baa,0xa29968][i],true,i===1?'female':'male');npc.name=station.id;applyVehiclePose(npc,{x:station.x+29,y:station.y,angle:Math.PI});this.scene.add(npc);return npc;});
     this.pedestrians=Array.from({length:20},(_,i)=>{const g=createPedestrian([0xc9815e,0x799aab,0xcdbd78][i%3]);this.scene.add(g);return g;});
     this.time=0;this.lastNight=null;this.look=new THREE.Vector3(800,10,515);this.heading=-Math.PI/2;this.resize();
   }
   resize(width=innerWidth,height=innerHeight,pixelRatio=globalThis.devicePixelRatio||1){
     this.cssWidth=Math.max(1,Math.round(width));this.cssHeight=Math.max(1,Math.round(height));
-    if(this.renderScale)this.renderer.setPixelRatio(this.renderScale.setCeiling(Math.min(pixelRatio,{low:.75,medium:1.2,high:1.6,auto:1.6}[this.quality||'auto'])));
+    if(this.renderScale)this.renderer.setPixelRatio(this.renderScale.setCeiling(Math.min(pixelRatio,{low:.75,medium:1.2,high:1.6,ultra:2,auto:1.6}[this.quality||'auto']),{low:.75,medium:1.2,high:1.6,ultra:2,auto:1.6}[this.quality||'auto']));
     this.renderer.setSize(this.cssWidth,this.cssHeight);this.camera.aspect=this.cssWidth/this.cssHeight;this.camera.fov=this.cssWidth<650?66:58;this.camera.updateProjectionMatrix();
   }
   updateRenderScale(timestamp=performance.now(),visible=typeof document==='undefined'||!document.hidden){
@@ -257,7 +259,12 @@ export class Renderer3D{
     const size=this.renderer.getDrawingBufferSize(new THREE.Vector2());
     return {effectiveRenderScale:this.renderer.getPixelRatio(),drawingBufferWidth:size.x,drawingBufferHeight:size.y,renderCssWidth:this.cssWidth,renderCssHeight:this.cssHeight};
   }
-  setQuality(preset){this.quality=['auto','low','medium','high'].includes(preset)?preset:'auto';if(this.renderScale)this.renderScale.scale=this.renderScale.pixelRatioCeiling(Math.min(globalThis.devicePixelRatio||1,{low:.75,medium:1.2,high:1.6,auto:1.6}[this.quality]));this.resize();}
+  setQuality(preset){this.quality=['auto','low','medium','high','ultra'].includes(preset)?preset:'auto';const ceiling={low:.75,medium:1.2,high:1.6,ultra:2,auto:1.6}[this.quality];if(this.renderScale){this.renderScale.maximum=ceiling;this.renderScale.scale=this.renderScale.pixelRatioCeiling(Math.min(globalThis.devicePixelRatio||1,ceiling));}this.resize();}
+  setLookSettings(settings){this.lookController??=createLookController();this.lookController.configure(settings);}
+  adjustLook(dx,dy){this.lookController??=createLookController();this.lookController.adjust(dx,dy);}
+  getViewMetrics(){return {...(this.lookController?.snapshot()||{yaw:0,pitch:0,sensitivity:1,invertY:false}),quality:this.quality||'auto',menuView:this.menuView||'city',arrivalProgress:typeof this.arrivalProgress==='number'?this.arrivalProgress:null,position:this.camera.position.toArray()};}
+  getPerformanceMetrics(){return {fps:this.renderScale?.observedFps??null,drawCalls:this.renderer.info?.render?.calls??null,triangles:this.renderer.info?.render?.triangles??null};}
+  setArrivalProgress(progress){this.arrivalProgress=typeof progress==='number'?THREE.MathUtils.clamp(progress,0,1):null;}
   setAppearance(id){
     this.appearance=Object.hasOwn(APPEARANCES,id)?id:'forest';const character=this.appearance==='river'?'female':'male';
     this.characterModels??={};const previous=this.character||'male';this.characterModels[previous]={scooter:this.scooter,walker:this.walker};
@@ -278,22 +285,25 @@ export class Renderer3D{
     if(walking){if(!this.walker){this.walker=createWalker(undefined,true,this.character||'male');applyCharacterPalette(this.walker,this.appearance||'forest');this.scene.add(this.walker);}this.walker.visible=true;this.walker.getObjectByName('delivery-cargo').visible=carrying;applyVehiclePose(this.walker,player);for(const leg of this.walker.children)if(leg.name.endsWith('-leg')||leg.name.endsWith('-arm'))leg.rotation.z=Math.sin(this.time*9+(leg.name.startsWith('left')?0:Math.PI)+(leg.name.endsWith('-arm')?Math.PI:0))*Math.min(.35,Math.abs(player.speed)*.018);}
     else if(this.walker)this.walker.visible=false;
     let delta=player.angle-this.heading;delta=Math.atan2(Math.sin(delta),Math.cos(delta));this.heading+=delta*Math.min(1,dt*3.5);
-    const pose=chaseCameraPose(player,this.heading,innerWidth<650),want=constrainCameraPosition(player,pose.position,this.cameraBlockers);
+    const view=this.lookController?.snapshot()||{yaw:0,pitch:0},viewHeading=this.heading+view.yaw,pose=chaseCameraPose(player,viewHeading,innerWidth<650);if(view.pitch){const focus=worldToScene(player.x,player.y,11),offset=pose.position.clone().sub(focus),length=offset.length(),pitch=Math.atan2(offset.y,Math.hypot(offset.x,offset.z))+view.pitch;pose.position.set(player.x-Math.cos(viewHeading)*Math.cos(pitch)*length,11+Math.sin(pitch)*length,player.y-Math.sin(viewHeading)*Math.cos(pitch)*length);}const want=constrainCameraPosition(player,pose.position,this.cameraBlockers);
     if(Math.hypot(this.camera.position.x-want.x,this.camera.position.z-want.z)>380)this.camera.position.copy(want);
     else this.camera.position.lerp(want,Math.min(1,dt*4.5));
     // The interpolated segment can cut through a corner even when its endpoints
     // are safe, so visibility is constrained again after smoothing.
     this.camera.position.copy(constrainCameraPosition(player,this.camera.position,this.cameraBlockers));
-    const aim=cameraAimTarget(player,this.heading,this.camera.position);
+    const aim=cameraAimTarget(player,viewHeading,this.camera.position);
     if(this.camera.position.distanceTo(worldToScene(player.x,player.y,11))<40||Math.hypot(this.camera.position.x-player.x,this.camera.position.z-player.y)<24)this.look.copy(aim);
     else this.look.lerp(aim,Math.min(1,dt*6));
     if(intro){const phase=this.introProgress*Math.PI*2,angle=.6+Math.sin(phase)*.1;this.camera.position.set(1241+Math.cos(angle)*330,190+Math.cos(phase)*8,631+Math.sin(angle)*330);this.look.set(1210,140,677);}
     const previewActive=intro&&this.menuView==='character';this.scooter.visible=!previewActive;if(this.walker)this.walker.visible=walking&&!previewActive;for(const preview of Object.values(this.previewCharacters||{}))preview.visible=previewActive&&preview===this.previewCharacter;if(previewActive){this.camera.position.set(848,18,534);this.look.set(815,9.5,515);}
+    const arrival=typeof this.arrivalProgress==='number',resident=this.questResidents?.[0];
+    if(arrival&&resident){const p=this.arrivalProgress,ease=x=>x*x*(3-2*x),blend=p<.22?ease(p/.22):p>.8?1-ease((p-.8)/.2):1,base=chaseCameraPose(player,player.angle,innerWidth<650),npc=resident.position,visit=new THREE.Vector3(npc.x-24,17,npc.z+18),greeting=new THREE.Vector3(npc.x,12.2,npc.z);this.camera.position.copy(base.position).lerp(visit,blend);this.look.copy(base.target).lerp(greeting,blend);}
+    if(resident){const arm=resident.getObjectByName('right-arm');if(arm)arm.rotation.z=arrival?Math.max(0,Math.min(1,(this.arrivalProgress-.1)/.1,(.9-this.arrivalProgress)/.1))*(2.15+Math.sin(this.arrivalProgress*48)*.1):0;}
     if(this.skyDome)this.skyDome.position.copy(this.camera.position);this.camera.lookAt(this.look);updateFoliageVisibility(this.softOccluders,player,this.camera.position);
     traffic.forEach((car,i)=>{if(!this.carMeshes[i]){this.carMeshes[i]=createCar(car);this.scene.add(this.carMeshes[i]);}applyVehiclePose(this.carMeshes[i],car);});
     for(const m of this.markers){const quest=m.l.type==='quest',done=quest?state.quest?.stage==='completed':stamps.includes(m.l.id);m.g.visible=!quest||target?.id===m.l.id;m.pin.visible=!done;m.pin.position.y=23+Math.sin(this.time*2)*1.2;m.pin.rotation.y=this.time*.7;m.ring.material.color.set(done?0xc2efa1:m.l.color);m.ring.scale.setScalar(target?.id===m.l.id?1.07+Math.sin(this.time*2)*.06:1);}
     this.pedestrians.forEach((p,i)=>{p.position.set(ROADS[i%5]+45,0,180+(i*91+this.time*(i%2?5:-5)+1300)%1220);p.rotation.y=i%2?-Math.PI/2:Math.PI/2;});
     this.renderer.render(this.scene,this.camera);
   }
-  resetCamera(player){this.heading=player.angle;const pose=chaseCameraPose(player,player.angle,innerWidth<650);this.camera.position.copy(constrainCameraPosition(player,pose.position,this.cameraBlockers));this.look.copy(cameraAimTarget(player,player.angle,this.camera.position));}
+  resetCamera(player){this.lookController?.reset();this.heading=player.angle;const pose=chaseCameraPose(player,player.angle,innerWidth<650);this.camera.position.copy(constrainCameraPosition(player,pose.position,this.cameraBlockers));this.look.copy(cameraAimTarget(player,player.angle,this.camera.position));}
 }

@@ -1,6 +1,6 @@
 // Original, locally synthesized music and sound effects. No audio recordings,
 // external downloads, autoplay bypasses, or reference-game assets are used.
-export const DEFAULT_AUDIO = Object.freeze({ master: .65, music: .3, effects: .6 });
+export const DEFAULT_AUDIO = Object.freeze({ master: .8, music: .6, effects: .9 });
 export const clampVolume = value => Number.isFinite(Number(value)) ? Math.max(0, Math.min(1, Number(value))) : 0;
 const NOTES = [60, 64, 67, 71, 69, 67, 64, 62, 57, 60, 64, 67, 65, 64, 62, 59];
 const frequency = midi => 440 * 2 ** ((midi - 69) / 12);

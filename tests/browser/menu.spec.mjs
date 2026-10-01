@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { clickCurrentTarget, selectSetting, startJourney } from './controls.mjs';
 
 const snapshot = page => page.evaluate(() => window.taipeiRide.snapshot());
 const position = state => ({ x: state.player.x, y: state.player.y, angle: state.player.angle });
 
-test('live WebGL introduction and menu: interruption, settings, help and return', async ({ page }, testInfo) => {
+test('live WebGL introduction and menu: interruption, settings, help and return', async ({ page, isMobile }, testInfo) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
@@ -52,7 +53,7 @@ test('live WebGL introduction and menu: interruption, settings, help and return'
   await page.locator('#menu-language').click();
   await expect.poll(async () => (await snapshot(page)).menu.language).toBe('en');
   await page.locator('#menu-settings').click();
-  await expect(page.locator('#setting-language')).toHaveValue('en');
+  await expect(page.locator('#setting-language input[value="en"]')).toBeChecked();
   await page.locator('#setting-effects').focus();
   await page.keyboard.press('Home');
   await page.keyboard.press('ArrowRight');
@@ -61,7 +62,7 @@ test('live WebGL introduction and menu: interruption, settings, help and return'
   await page.locator('#setting-master').focus();
   await page.keyboard.press('Home');
   await expect.poll(async () => (await snapshot(page)).menu.audio).toMatchObject({ master: 0, music: 1, effects: .01, available: true, activated: true, running: true });
-  await page.locator('#setting-quality').selectOption('low');
+  await selectSetting(page, 'setting-quality', 'low');
   await expect.poll(async () => (await snapshot(page)).effectiveRenderScale).toBeLessThanOrEqual(.75);
   const low = await page.evaluate(() => {
     const gl = document.querySelector('#world').getContext('webgl2');
@@ -72,14 +73,14 @@ test('live WebGL introduction and menu: interruption, settings, help and return'
   expect(low.actualBuffer).toEqual([low.drawingBufferWidth, low.drawingBufferHeight]);
   expect(low.css).toEqual([low.renderCssWidth, low.renderCssHeight]);
   await testInfo.attach('menu-low-quality-evidence', { body: JSON.stringify(low, null, 2), contentType: 'application/json' });
-  await page.locator('#setting-quality').selectOption('high');
+  await selectSetting(page, 'setting-quality', 'high');
   await expect.poll(async () => (await snapshot(page)).menu.quality).toBe('high');
-  await page.locator('#setting-quality').selectOption('medium');
+  await selectSetting(page, 'setting-quality', 'medium');
   await expect.poll(async () => (await snapshot(page)).menu.quality).toBe('medium');
   expect((await snapshot(page)).effectiveRenderScale).toBeLessThanOrEqual(1.2);
   await page.locator('#setting-night').check();
   await expect.poll(async () => (await snapshot(page)).night).toBe(true);
-  await page.locator('#setting-language').selectOption('zh');
+  await selectSetting(page, 'setting-language', 'zh');
   await page.locator('#setting-motion').uncheck();
   await capture('menu-03-settings');
   await page.locator('#replay-intro').click();
@@ -88,8 +89,10 @@ test('live WebGL introduction and menu: interruption, settings, help and return'
   await expect.poll(async () => (await snapshot(page)).menu.phase).toBe('menu');
   await page.locator('#menu-settings').click();
   await page.locator('#replay-intro').click();
-  await expect(page.locator('#skip-intro')).toBeVisible();
-  await page.locator('#skip-intro').click();
+  // A short, real-time intro can finish while locator.click waits for multiple
+  // stable software-GPU frames. Read its actual current hit target once, then
+  // send normal native pointer/touch input without changing the game clock.
+  await clickCurrentTarget(page, '#skip-intro', isMobile);
   await expect.poll(async () => (await snapshot(page)).menu.phase).toBe('menu');
   expect((await snapshot(page)).started).toBe(false);
   expect(position(await snapshot(page))).toEqual(position(initial));
@@ -98,7 +101,7 @@ test('live WebGL introduction and menu: interruption, settings, help and return'
   await expect(page.locator('#about-dialog')).toBeVisible();
   await page.locator('#about-dialog .front-back').click();
   await expect(page.locator('#about-dialog')).not.toBeVisible();
-  await page.locator('#start').click();
+  await startJourney(page, { isMobile });
   await expect.poll(async () => (await snapshot(page)).menu.phase).toBe('playing');
   await page.keyboard.down('w');
   await expect.poll(async () => (await snapshot(page)).player.distance).toBeGreaterThan(1);
@@ -132,7 +135,7 @@ test('live WebGL introduction and menu: interruption, settings, help and return'
   expect((await snapshot(page)).menu.audio).toMatchObject({ master: 0, music: 1, effects: .01 });
   expect((await snapshot(page)).night).toBe(true);
   expect(position(await snapshot(page))).toEqual(position(returned));
-  await page.locator('#start').click();
+  await startJourney(page, { isMobile });
   await expect.poll(async () => (await snapshot(page)).menu.phase).toBe('playing');
   expect((await snapshot(page)).renderMode).toBe('3d');
   expect(errors).toEqual([]);

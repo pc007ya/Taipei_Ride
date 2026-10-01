@@ -24,6 +24,6 @@ function click(id){$(id).click();frame();}
 
 test('blocked storage has a persistent warning before play and warns once on save',()=>{
  assert.equal(snapshot().storageAvailable,false);assert.equal($('storage-notice').hidden,false);assert.match(document.querySelector('.welcome-note').textContent,/無法儲存/);
- click('start');frame(260);assert.match($('toast').textContent,/重新整理後進度不會保留/);
+ click('start');assert.equal(snapshot().cinematic,true);click('skip-arrival');frame(260);assert.match($('toast').textContent,/重新整理後進度不會保留/);
  $('toast').textContent='subsequent gameplay message';frame(260);assert.equal($('toast').textContent,'subsequent gameplay message');assert.equal($('storage-notice').hidden,false);
 });

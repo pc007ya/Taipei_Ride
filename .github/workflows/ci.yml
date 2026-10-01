@@ -40,7 +40,7 @@ jobs:
       - name: Install Traditional Chinese screenshot fonts
         run: node tests/browser/install-ci-font.mjs
       - name: Run live WebGL browser tests
-        run: npm run test:browser -- --project=${{ matrix.project }} --grep-invert "complete original delivery quest"
+        run: npm run test:browser -- --project=${{ matrix.project }} tests/browser/game.spec.mjs tests/browser/menu.spec.mjs tests/browser/interface.spec.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -53,6 +53,64 @@ jobs:
         if: always()
         with:
           name: taipei-ride-screenshots-${{ matrix.project }}
+          path: test-results/**/*.png
+          retention-days: 14
+  models:
+    name: WebGL production model inspection
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/browser/install-ci-font.mjs
+      - name: Render the production meshes through actual WebGL
+        run: npm run test:browser -- --project=desktop tests/browser/models.spec.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: taipei-ride-webgl-models
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: taipei-ride-screenshots-models
+          path: test-results/**/*.png
+          retention-days: 14
+  contacts:
+    name: WebGL runtime collision contacts
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/browser/install-ci-font.mjs
+      - name: Exercise production collisions with normal keyboard controls
+        run: npm run test:browser -- --project=desktop tests/browser/collision.spec.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: taipei-ride-webgl-contacts
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: taipei-ride-screenshots-contacts
           path: test-results/**/*.png
           retention-days: 14
   journey:

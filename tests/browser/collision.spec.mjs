@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { startJourney } from './controls.mjs';
 import { createWorld, START, PERSON, SCOOTER, makeTraffic, poseCollides } from '../../src/world.js';
 import { collisionBody, obstacleBody, bodiesOverlap } from '../../src/physics.js';
 import { createSession, serializeSession, SAVE_KEY } from '../../src/session.js';
@@ -32,7 +33,7 @@ async function loadFixture(page, save) {
   }, { save, key: SAVE_KEY });
   await page.goto('/');
   await page.waitForFunction(() => window.taipeiRide);
-  await page.locator('#start').click();
+  await startJourney(page);
   expect((await snapshot(page)).renderMode).toBe('3d');
 }
 

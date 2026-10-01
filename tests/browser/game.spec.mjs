@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { startJourney } from './controls.mjs';
 
 const snapshot = page => page.evaluate(() => window.taipeiRide.snapshot());
 
@@ -55,7 +56,7 @@ test('real WebGL game: drive, stamp, map, pause, save, reset and touch layout', 
   await page.waitForFunction(() => window.taipeiRide);
   await assertLiveWebGL(page, testInfo);
   await capture(page, testInfo, '01-welcome-webgl');
-  await page.locator('#start').click();
+  await startJourney(page, { isMobile });
   await expect.poll(async () => (await snapshot(page)).started).toBe(true);
   await page.locator('#stamp-rail button').first().click();
   await capture(page, testInfo, '02-playing-day');
@@ -106,7 +107,7 @@ test('real WebGL game: drive, stamp, map, pause, save, reset and touch layout', 
   await page.waitForFunction(() => window.taipeiRide);
   expect((await snapshot(page)).stamps).toContain('market');
   expect((await snapshot(page)).night).toBe(true);
-  await page.locator('#start').click();
+  await startJourney(page, { isMobile });
 
   const parked = (await snapshot(page)).vehicle;
   await page.keyboard.press('f');

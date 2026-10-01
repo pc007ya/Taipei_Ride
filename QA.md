@@ -6,7 +6,7 @@ Validated on 2026-10-01 with Node.js 24.19.0.
 
 This revision replaces the actor/vehicle geometry and collision system, changes building scale, and adds the intro/menu presentation. Earlier successful runs below are historical baselines, not evidence that this revision passed. Check the exact commit's completed `Test and build` run before treating the current version as validated.
 
-Local final-tree checks on 2026-10-01: **133 tests passed, 0 failed**, `npm run build` passed, and changed JavaScript syntax plus `git diff --check` passed. This count includes the scaled geometry/contact, collision, intro, menu and synthesized-audio regressions. It does not count the newly added live browser tests as passed.
+Local second-refinement checks on 2026-10-01: **154 tests passed, 0 failed**, `npm run build` passed, and changed JavaScript syntax plus `git diff --check` passed. This count includes the scaled geometry/contact, collision, intro, menu, synthesized-audio, arrival, camera-control and gamepad-mapping regressions. It does not count new live browser tests as passed.
 
 The live suite now separates the long continuous delivery journey from the desktop/portrait/landscape jobs. It keeps normal keyboard input, the full delivery route and the existing route budgets. The desktop suite additionally checks:
 
@@ -22,6 +22,23 @@ Collision fixtures use the normal v2 save loader only to establish a reproducibl
 Traffic lane centres now sit at one quarter of the seven-metre road width (17.5 world units). This leaves 2.7 units between a centreline scooter's occupied footprint and an adjacent car's mirrors. Tests cover four cardinal headings, same/opposite-direction passage and three turn-entry phases without reducing either collider. Trees and lamp bases are solid, non-destructible obstacles in this implementation; that is not a claim about untested destruction behavior in the reference game.
 
 Native Chromium in the editing environment cannot start because its process socket is not permitted. GitHub Actions runs the official Chromium build with actual WebGL 2 through SwiftShader. New browser tests being present or discovered is not a passing result; mobile viewport emulation does not establish physical-phone or hardware-GPU behavior.
+
+### First refinement checkpoint and its failures
+
+[Run 36937244997](https://github.com/pc007ya/Taipei_Ride/actions/runs/36937244997), commit `29f7a078be94d3ed9fd6154c0fd2bca30464ac63`, finished with an overall **failure**, retained for diagnosis:
+
+- 133 unit tests/build passed; complete gameplay smoke passed in desktop (2.7 minutes), portrait (2.0 minutes) and landscape (2.4 minutes)
+- All five live application collision tests passed. Riding/walking wall contacts had speed 0 and zero displacement while holding forward input. Stopped/moving traffic contacts left actor and car at speed 0 without overlap or forced actor displacement. Oblique wall contact moved 7.651 world units along the wall and 0 units through its normal
+- The unchanged continuous delivery route passed in 14.8 minutes at 1280×720, with actual WebGL scale 0.55, one 300-coin reward, reload persistence and reset
+- The menu test failed on every viewport when the 2.4-second title transition finished while `locator.click` waited for stable frames before clicking Skip. The next test revision reads the visible button's real bounds and immediately uses native mouse/touch input. It does not change the animation clock, extend the intro or force a hidden element click
+- Four production-model inspection images were captured. The final tree/lamp view rendered visibly, but a sparse 15×11 framebuffer grid returned 14 sampled colors against the >15 threshold. The next test reads the full real framebuffer and samples every fourth pixel, retaining the threshold and attaching images before assertions
+- Visual inspection found white pedestrians: the second mesh-baking pass lost existing vertex colors. The second refinement preserves source vertex color multiplied by material color, adds a concrete palette regression, and adds a separate real WebGL street-resident image
+
+### Second refinement coverage
+
+The next live run also needs to validate the 8.4-second original arrival scene with real city/NPC rendering, locked movement, manual skip and no forced replay on resume; right-side settings/control panels and full pause dashboard; five quality presets, FPS/HUD preferences, native range input, and actual mouse dragging with sensitivity and inverted Y. Model inspection and collision contact jobs are separate so a long UI/route test cannot hide their evidence.
+
+CI has no physical controller attached. Gamepad mapping, dead zones, edge-triggered actions, disconnect and neutral-release behavior have unit coverage, and browser tests record API availability. This does not establish real-controller hardware behavior or physical audio output.
 
 ## Previous baseline: commit df30b3f
 
