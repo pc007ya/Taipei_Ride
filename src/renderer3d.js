@@ -1,5 +1,6 @@
 import * as THREE from '../vendor/three.module.js';
 import { ROADS, ROAD_WIDTH, LANDMARKS } from './world.js';
+import { QUEST_STATIONS } from './session.js';
 // The 2D simulation's (x, y) ground coordinates map to Three.js (x, z).
 // Elevation is exclusively the Three.js y axis; +simulation-y is south/+z.
 export function worldToScene(x,y,height=0){return new THREE.Vector3(x,height,y);}
@@ -81,12 +82,26 @@ export function createScooter(){
   for(const x of [-10,11]){const wheel=new THREE.Mesh(new THREE.CylinderGeometry(3.5,3.5,3,12),material(0x20373b));wheel.rotation.x=Math.PI/2;wheel.position.set(x,4,0);g.add(wheel);}
   box(g,-4,6,0,18,5,8,paint);box(g,9,6,0,5,11,8,paint);box(g,-4,12,0,12,2.5,7,0x294d43);box(g,0,5,0,18,1,8,0x829694);
   box(g,10,16,0,2,1.5,14,0x334b4b);box(g,12,11,0,1.5,4,5,0xf9eeb8);
+  const cargo=box(g,-13,12,0,8,7,9,0xd8ae68);cargo.name='delivery-cargo';cargo.visible=false;
+  const riderStart=g.children.length;
   box(g,-3,14,0,7,10,6,0xe7ad69);box(g,-3,12,4,7,3,3,0x314f59);box(g,-3,12,-4,7,3,3,0x314f59);
   const helmet=new THREE.Mesh(new THREE.SphereGeometry(4.8,12,8),material(0xf4f0d3));helmet.position.set(-2,28,0);g.add(helmet);
   box(g,2,27,0,1,3.5,6.5,0x426160);
   for(const z of [-3.5,3.5]){const arm=box(g,3,19,z,10,2,2,0xecc790);arm.rotation.z=-.4;}
+  for(const part of g.children.slice(riderStart))part.userData.riderPart=true;
   box(g,-13,8,0,1,2,5,mat(0xe2745c,{emissive:0xcf3522,emissiveIntensity:.3}));
   return g;
+}
+export function setMountedRiderVisible(scooter,visible){for(const part of scooter.children)if(part.userData.riderPart)part.visible=visible;}
+export function createWalker(color=0xe7ad69){
+ const g=new THREE.Group();g.name='walking-player';
+ const shadow=new THREE.Mesh(new THREE.CircleGeometry(6,16),new THREE.MeshBasicMaterial({color:0x153b32,transparent:true,opacity:.22,depthWrite:false}));shadow.rotation.x=-Math.PI/2;shadow.position.y=.6;g.add(shadow);
+ for(const z of [-2.3,2.3]){const leg=box(g,0,0,z,3.5,13,3.5,0x31505a);leg.name=z<0?'left-leg':'right-leg';}
+ box(g,0,12,0,7.5,12,7,color);
+ const head=new THREE.Mesh(new THREE.SphereGeometry(4.7,12,8),material(0xf3edce));head.position.set(0,29,0);g.add(head);box(g,4.3,28,0,1,3,6,0x426160);
+ for(const z of [-5,5])box(g,0,13,z,2.5,9,2.5,0xeac495);
+ const cargo=box(g,7,14,0,7,7,8,0xd8ae68);cargo.name='delivery-cargo';cargo.visible=false;
+ return g;
 }
 function createCar(car){const g=new THREE.Group();box(g,0,4,0,32,9,15,car.color);box(g,-1,13,0,17,7,13,car.color);box(g,8,14,0,1,5,12,0x395864);box(g,-10,14,0,1,5,12,0x395864);for(const x of [-10,10])for(const z of [-8,8]){const wheel=new THREE.Mesh(new THREE.CylinderGeometry(3,3,2,8),material(0x273738));wheel.rotation.x=Math.PI/2;wheel.position.set(x,4,z);g.add(wheel);}box(g,16.5,8,0,1,2,12,mat(0xefefb8,{emissive:0xffd994,emissiveIntensity:.6}));return g;}
 function createTree(o){const g=new THREE.Group();g.position.set(o.x,0,o.y);cylinder(g,0,0,0,1.7,o.h*.75,0x887d59);const crown=new THREE.Mesh(new THREE.IcosahedronGeometry(o.h*.49,1),material(o.color).clone());crown.name='tree-crown';crown.position.set(0,o.h,0);crown.scale.y=1.15;g.add(crown);return g;}
@@ -164,7 +179,8 @@ export class Renderer3D{
     this.sun=new THREE.DirectionalLight(0xffefcb,2.3);this.sun.position.set(-200,500,-150);this.scene.add(this.sun);
     const created=createCity(world);this.scene.add(created.city);this.glass=created.glass;this.lampMaterial=created.lampMaterial;this.foliage=created.foliage;this.softOccluders=created.softOccluders;
     this.scooter=createScooter();this.scene.add(this.scooter);this.carMeshes=[];
-    this.markers=LANDMARKS.map(l=>{const g=new THREE.Group();g.position.set(l.x,1,l.y);const ring=new THREE.Mesh(new THREE.TorusGeometry(27,1.25,8,48),new THREE.MeshBasicMaterial({color:l.color}));ring.rotation.x=Math.PI/2;g.add(ring);const pin=new THREE.Mesh(new THREE.OctahedronGeometry(5,0),new THREE.MeshBasicMaterial({color:l.color}));pin.position.y=32;g.add(pin);this.scene.add(g);return {l,g,ring,pin};});
+    this.markers=[...LANDMARKS,...Object.values(QUEST_STATIONS)].map(l=>{const g=new THREE.Group();g.position.set(l.x,1,l.y);const ring=new THREE.Mesh(new THREE.TorusGeometry(27,1.25,8,48),new THREE.MeshBasicMaterial({color:l.color}));ring.rotation.x=Math.PI/2;g.add(ring);const pin=new THREE.Mesh(new THREE.OctahedronGeometry(5,0),new THREE.MeshBasicMaterial({color:l.color}));pin.position.y=32;g.add(pin);this.scene.add(g);return {l,g,ring,pin};});
+    this.questResidents=Object.values(QUEST_STATIONS).map((station,i)=>{const npc=createWalker([0xc78062,0x719baa,0xa29968][i]);npc.name=station.id;applyVehiclePose(npc,{x:station.x+29,y:station.y,angle:Math.PI});this.scene.add(npc);return npc;});
     this.pedestrians=Array.from({length:20},(_,i)=>{const g=new THREE.Group();box(g,0,2,0,3,6,2.5,[0xc9815e,0x799aab,0xcdbd78][i%3]);const head=new THREE.Mesh(new THREE.SphereGeometry(1.7,6,5),material(0xe6c9a1));head.position.y=10;g.add(head);this.scene.add(g);return g;});
     this.time=0;this.lastNight=null;this.look=new THREE.Vector3(800,16,515);this.heading=-Math.PI/2;this.resize();
   }
@@ -172,7 +188,9 @@ export class Renderer3D{
   render(state,dt){
     const {player,traffic,night,stamps,target}=state;this.time+=dt;
     if(this.lastNight!==night){this.lastNight=night;const bg=night?0x112835:PALETTE.sky;this.scene.background.set(bg);this.scene.fog.color.set(bg);this.light.intensity=night?.95:2.4;this.sun.intensity=night?.5:2.3;this.sun.color.set(night?0xb9cddc:0xffefcb);this.glass.emissiveIntensity=night?1.15:0;this.lampMaterial.emissiveIntensity=night?2:.1;for(const entry of this.softOccluders)if(entry.mesh.userData.lampLight)entry.mesh.material.emissiveIntensity=night?2:.1;this.renderer.toneMappingExposure=night?1.05:1.1;}
-    applyVehiclePose(this.scooter,player);
+    const walking=state.mode==='walking',carrying=state.quest?.stage==='carrying'||state.quest?.stage==='deliver';this.scooter.getObjectByName('delivery-cargo').visible=carrying&&!walking;applyVehiclePose(this.scooter,walking?state.vehicle:player);setMountedRiderVisible(this.scooter,!walking);
+    if(walking){if(!this.walker){this.walker=createWalker();this.scene.add(this.walker);}this.walker.visible=true;this.walker.getObjectByName('delivery-cargo').visible=carrying;applyVehiclePose(this.walker,player);for(const leg of this.walker.children)if(leg.name.endsWith('-leg'))leg.rotation.z=Math.sin(this.time*9+(leg.name==='left-leg'?0:Math.PI))*Math.min(.35,Math.abs(player.speed)*.018);}
+    else if(this.walker)this.walker.visible=false;
     let delta=player.angle-this.heading;delta=Math.atan2(Math.sin(delta),Math.cos(delta));this.heading+=delta*Math.min(1,dt*3.5);
     const pose=chaseCameraPose(player,this.heading,innerWidth<650),want=constrainCameraPosition(player,pose.position,this.cameraBlockers);
     if(Math.hypot(this.camera.position.x-want.x,this.camera.position.z-want.z)>380)this.camera.position.copy(want);
@@ -185,7 +203,7 @@ export class Renderer3D{
     else this.look.lerp(aim,Math.min(1,dt*6));
     this.camera.lookAt(this.look);updateFoliageVisibility(this.softOccluders,player,this.camera.position);
     traffic.forEach((car,i)=>{if(!this.carMeshes[i]){this.carMeshes[i]=createCar(car);this.scene.add(this.carMeshes[i]);}applyVehiclePose(this.carMeshes[i],car);});
-    for(const m of this.markers){const done=stamps.includes(m.l.id);m.pin.visible=!done;m.pin.position.y=34+Math.sin(this.time*2)*3;m.pin.rotation.y=this.time*.7;m.ring.material.color.set(done?0xc2efa1:m.l.color);m.ring.scale.setScalar(target?.id===m.l.id?1.07+Math.sin(this.time*2)*.06:1);}
+    for(const m of this.markers){const quest=m.l.type==='quest',done=quest?state.quest?.stage==='completed':stamps.includes(m.l.id);m.g.visible=!quest||target?.id===m.l.id;m.pin.visible=!done;m.pin.position.y=34+Math.sin(this.time*2)*3;m.pin.rotation.y=this.time*.7;m.ring.material.color.set(done?0xc2efa1:m.l.color);m.ring.scale.setScalar(target?.id===m.l.id?1.07+Math.sin(this.time*2)*.06:1);}
     this.pedestrians.forEach((p,i)=>{p.position.set(ROADS[i%5]+45,0,180+(i*91+this.time*(i%2?5:-5)+1300)%1220);});
     this.renderer.render(this.scene,this.camera);
   }

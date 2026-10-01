@@ -1,119 +1,113 @@
 # Taipei Ride · 台北漫遊
 
-一款以台北街景為靈感的獨立瀏覽器騎乘小遊戲。騎車穿梭原創街區，依地圖前往地標，減速停靠並拍照打卡；集滿 6 枚印章後，仍可繼續自由漫遊。
+一款以台北街景為靈感、自行撰寫的瀏覽器探索遊戲。騎上機車穿梭街區，也可以停車步行；完成原創送茶委託，或隨心收集六站城市印記。
 
-預設使用 **Three.js、WebGL 與第三人稱跟隨鏡頭**，在真正的 3D 場景中騎乘；建築、街景與車輛採用原創、由程式生成的幾何造型。另保留自製等角投影 **Canvas 2D 相容備援模式**，供無法使用 WebGL 的環境使用。兩種模式共用世界資料、騎乘物理、操作與地標集章進度。
+預設使用 **Three.js 0.186.1 / WebGL 2 / 第三人稱鏡頭**。建築、車輛、角色與地標皆為原創程序化幾何。無法使用 WebGL 時，會清楚標示並啟用 **Canvas 2D 等角相容模式**；兩種畫面共用移動、上下車、任務、遊戲幣與存檔。
 
-Three.js 0.186.1 是唯一的第三方執行階段相依套件，以 MIT 授權使用；遊戲不需要付費 API、地圖服務金鑰或外部 CDN。
-
-> 這是想像中的台北主題遊戲世界，不是真實道路地圖、導航工具或交通安全模擬器。街區、距離、路線、車速與碰撞均經遊戲化處理；請勿用於現實駕駛判斷。
+> 這是想像中的台北主題世界，不是真實地圖、導航工具或交通安全模擬器。道路、距離、速度與碰撞都經過遊戲化處理。
 
 ## 快速開始
 
-需要 Node.js 22 與 npm。下載並解壓完整專案後，在專案根目錄執行：
+使用 Node.js 22 與 npm：
 
 ```sh
 npm ci
 npm run dev
 ```
 
-`npm ci` 會依 `package-lock.json` 安裝固定版本的 Three.js，初次安裝需要網路。依終端機顯示的網址開啟遊戲；預設為 `http://localhost:4173`。
+開啟終端機顯示的網址，預設為 `http://localhost:4173`。初次安裝相依套件需要網路；遊戲本身不使用付費 API、地圖服務金鑰或外部 CDN。
 
-**請透過 HTTP 伺服器開啟，不要直接雙擊 `index.html`。** 瀏覽器對 `file://` 下的 JavaScript 模組有存取限制。
+請透過 HTTP 伺服器開啟，不要直接雙擊 `index.html`。可加上 `?renderer=2d` 明確測試相容模式；移除參數並重新整理即可再次嘗試 3D。
 
-### 3D 與相容模式
-
-支援 WebGL 2 的瀏覽器會預設使用第三人稱 3D，畫面上標示「3D 漫遊」。無法初始化 WebGL 時會自動改用「2D 相容模式」。如需主動測試備援，可開啟 `http://localhost:4173/?renderer=2d`；移除網址參數並重新整理，即會再次嘗試啟用 3D。切換模式不會清除同一網站來源下的集章進度。
-
-## 操作方式
+## 操作
 
 | 鍵盤 | 功能 |
 | --- | --- |
-| `W` / `↑` | 油門、向前行駛 |
-| `S` / `↓` | 倒車 |
-| `A` / `←`、`D` / `→` | 左轉、右轉 |
-| `Space` | 煞車 |
-| `E` | 在地標附近減速後拍照打卡 |
-| `P` | 暫停／繼續 |
-| `R` | 重置車輛位置，保留已完成的打卡進度 |
-| `M` | 開啟地圖；按 `Esc` 或關閉鈕返回 |
-| `N` | 切換日間／夜間氛圍 |
+| W / ↑ | 騎車油門／步行前進 |
+| S / ↓ | 騎車倒車／步行後退 |
+| A / ←、D / → | 左右轉向；步行時可原地轉身 |
+| Space | 煞車／停步 |
+| F | 停車後下車；走近停放的機車後上車 |
+| E | 當前任務互動，或城市收藏支線打卡 |
+| P | 暫停／繼續 |
+| R | 人車一起回到起點，保留任務、遊戲幣、印章與里程 |
+| M | 開啟地圖；Esc 或關閉鈕返回 |
+| N | 切換日夜 |
 
-手機與平板可使用畫面上的「左轉／右轉／油門／倒車／煞車」觸控按鈕，並以「拍照打卡」完成地標互動。轉向與油門可搭配操作；放開按鈕即停止該項輸入。
+手機可搭配按住轉向與前進／油門按鈕，並使用畫面上的互動及上／下車按鈕。放開、取消觸控或切換分頁都會清除持續輸入。
 
-### 如何完成旅程
+下車前必須減速；程式會尋找沒有建物、車流或穿牆風險的落腳處。機車會留在原地，必須回到附近才能上車。步行時小地圖的藍色方塊標示停車位置。若人車卡住，可按 R 安全回到起點。
 
-1. 開始遊戲，查看地圖與目前的地標目標。
-2. 沿街道騎到目標附近，先鬆開油門並煞車。
-3. 在互動範圍內、車速足夠低時，按 `E` 或「拍照打卡」。車速過快或距離太遠時，請再靠近並減速。
-4. 繼續探索其他地標，集滿 6 枚印章；完成後可繼續自由騎乘。
+## 原創主線：雨後的一杯茶
 
-遇到卡住或想重新回到可行駛位置時，按 `R` 重置車輛即可，不必清除整段旅程。
+1. 到巷口夜市的 **阿沐茶舖**，靠近並慢下來後按 E 接委託。
+2. 前往 **街角取貨點**，按 E 領取熱茶。
+3. 騎上機車送往老街，領物後須實際騎乘至少 100 個遊戲距離單位。步行不會增加配送騎乘里程。
+4. 到 **老街修傘攤** 附近停車，按 F 下車，再走近按 E 交付。
+5. 完成後獲得 **300 遊戲幣**，同一委託只會發放一次獎勵。
 
-## 進度與隱私
+未接單、未領物、騎乘距離不足、位置不對或仍在機車上，都無法完成交付。熱茶會顯示在 HUD 與角色／機車上；目的地和提示隨階段更新。這些遊戲幣沒有現金價值，也不涉及任何付款。
 
-- 地標打卡進度儲存在目前瀏覽器的 `localStorage`，不需要帳號。
-- 存檔與網站來源綁定；不同瀏覽器、裝置、網域或連接埠不會自動共用進度。
-- 清除網站資料、改用其他瀏覽器，或結束不保留網站資料的私密瀏覽工作階段，可能使進度消失。
-- `R` 只重置車輛。若要清除旅程進度，請從暫停選單選擇「重新開始集章旅程」並確認提示。
-- 遊戲沒有雲端存檔、多人連線或帳號系統。部署平台本身的連線紀錄與隱私政策由各平台管理。
+## 支線：六站城市收藏
 
-## 建置、測試與預覽
+在右側印章列或地圖選擇地標，即切換到城市收藏支線。靠近地標並減速後按 E 打卡；可騎車或步行完成。每站只計一次，集滿六站後仍可自由漫遊。
+
+地圖裡的「追蹤主線」可隨時返回送茶任務，不會清除支線收藏。
+
+## 存檔與重置
+
+- v2 存檔鍵為 `taipei-ride:v2`，包含角色位置、機車停放位置、移動模式、任務階段、配送騎乘里程、獎勵旗標、遊戲幣、印章、總里程、日夜與追蹤目標。
+- 載入時角色與機車都會停止。越界、建物內或非法座標會安全修正；數值、任務階段及印章也會驗證。
+- 沒有 v2 存檔時，會讀取舊 `taipei-ride:v1` 的印章、里程與日夜，保留既有收藏並建立新主線。舊版備份不會被刪除；新進度寫入 v2。
+- 進度保存在目前網站來源的瀏覽器 `localStorage`。不同裝置、瀏覽器、網域或連接埠不會共用。清除網站資料或私密瀏覽政策可能使進度消失。
+- 儲存被瀏覽器阻擋時，會持續提示「進度無法儲存」，不會假裝已保留。
+- R 是救援移位，不清除進度。暫停選單的「重新開始完整旅程」在確認後清除主線、遊戲幣、印章、里程及人車位置，回到新遊戲狀態。
+- 沒有帳號、雲端存檔、多人連線或個人資料上傳功能。
+
+## 建置與測試
 
 ```sh
-# 執行專案測試
-npm test
+npm test                 # 物理、狀態機、DOM 與真3D場景數學回歸
+npm run build            # 輸出完整靜態網站至 dist/
+npm run preview          # 預覽 dist/，預設 4173
 
-# 產生可部署的靜態網站
-npm run build
-
-# 在本機預覽建置成品，預設連接埠 4173
-npm run preview
+# 真 Chromium / WebGL 瀏覽器驗收（需可執行瀏覽器的環境）
+npx playwright install --with-deps chromium
+npm run test:browser
 ```
 
-`dev` 與 `build` 會先自動準備本機 Three.js 檔案。建置會將來源、公開檔案與 Three.js 整理至 `dist/`，不需要遠端編譯服務或外部 CDN。Three.js 的授權原文隨成品保存在 `dist/vendor/LICENSE.three.txt`。請在修改後重新建置，再檢查 `dist/` 的實際成品。
+`predev`、`pretest` 與 `prebuild` 會準備本機 Three.js 檔案。Three.js 授權原文會隨成品放在 `dist/vendor/LICENSE.three.txt`；部署時須保留。
 
-### 手動驗收建議
+GitHub Actions 會執行一般測試、建置，以及桌機、手機直向與橫向的 Chromium/WebGL 測試，保存截圖和 trace。另有一條透過真鍵盤行駛的完整送茶路線。**包含測試程式不代表已通過真瀏覽器驗收，應查看對應 commit 的 CI 結果和影像。** 詳細分層證據與限制見 [QA.md](QA.md)。
 
-- 顯示模式：確認支援 WebGL 時使用第三人稱 3D 主版本；無法使用 WebGL 時可進入清楚標示的 Canvas 2D 相容模式，且兩者共用任務進度。
-- 桌面：確認前進、倒車、轉向、煞車、暫停、地圖切換、日夜切換與車輛重置。
-- 觸控：確認油門加轉向的組合操作，以及手指抬起後不會持續輸入。
-- 打卡：檢查太遠或太快時無法打卡、靠近減速後可完成，以及同一地標不會重複增加印章。
-- 存檔：取得印章後重新整理，確認進度保留；確認重置車輛保留印章，重置旅程則會要求確認。
-- 旅程：完成全部 6 枚印章後，確認仍能自由漫遊。
-- 視窗：檢查桌面與手機尺寸、旋轉螢幕、切換分頁後返回，以及連續開關選單。
-- 成品：以 `npm run preview` 開啟，確認瀏覽器主控台沒有錯誤，靜態檔案沒有遺失。
+## 部署
 
-以上是驗收清單，不代表所有瀏覽器、裝置或情境均已完成測試。請使用支援 JavaScript 模組的現代瀏覽器；3D 主版本需要可用的 WebGL 2 與相容圖形環境，2D 備援模式需要 Canvas 2D。實際流暢度取決於裝置、圖形驅動與畫面尺寸。
+不需要後端、資料庫、環境變數或 API 金鑰。將完整 `dist/` 部署到靜態 HTTP 主機即可，不能只傳 `index.html`。
 
-## 靜態部署
+- Netlify：已附 `netlify.toml`，建置 `npm run build`，輸出 `dist`，Node.js 22
+- Vercel：已附 `vercel.json`，無框架靜態建置，輸出 `dist`
+- GitHub Actions 會保存靜態成品；工作流程不會自動發布網站
 
-本專案不需要後端、資料庫、環境變數或 API 金鑰。將建置後的 `dist/` 整個資料夾交由靜態 HTTP 網站服務即可。
+包含部署設定不代表已部署。發布前應確認公開範圍和主機費用。
 
-已附上以下設定檔，**但包含設定檔不代表已發布網站**：
+## 本輪範圍與待補
 
-- **Netlify**：`netlify.toml` 指定 `npm run build`、輸出目錄 `dist` 與 Node.js 22。若專案位於大型儲存庫的子目錄，請在平台設定該子目錄為專案根目錄。
-- **Vercel**：`vercel.json` 指定無框架的靜態建置、`npm run build` 與輸出目錄 `dist`。匯入時請選擇本專案目錄，並使用 Node.js 22。
-- **其他靜態主機**：先執行 `npm run build`，再上傳 `dist/` 內的完整檔案結構；請勿只上傳 `index.html`。
+本輪補齊步行／機車切換、獨立停車、原創多階段委託及 v2 完整存檔。六站打卡保留為支線。
 
-平台設定欄位可能更新，詳見 [Netlify 的檔案設定說明](https://docs.netlify.com/build/configure-builds/file-based-configuration/) 與 [Vercel 專案設定說明](https://vercel.com/docs/project-configuration)。發布前請自行確認網站的公開範圍與平台費用。
+追逐／通緝系統、補給消耗及更完整的城市生活互動列為後續項目，本輪尚未實作。街區、畫風、任務內容和規模也仍與參考網站不同。
 
-## 原創、授權與界線
+## 原創與授權
 
-本專案以 MIT 授權提供；見 [LICENSE](LICENSE)。素材與相依性說明見 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+原創專案採 [MIT License](LICENSE)。相依套件和素材聲明見 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 
-本次未取得 `taipei-gta.vercel.app` 公開的原始碼。Taipei Ride / 台北漫遊是自行撰寫、以城市騎乘玩法與氛圍為參考的復刻風格作品，**不是原作備份、原始碼匯出或原版還原包**。沒有複製原站的程式碼或素材，也不與該網站、其作者或任何第三方遊戲品牌有隸屬、合作或贊助關係。台北地名只作城市氛圍與地標靈感之用，並非官方認證或精確地理重建。
+本次未取得 `taipei-gta.vercel.app` 的公開原始碼。Taipei Ride 是以城市探索玩法為參考、自行撰寫的獨立版本，**不是原作備份、原始碼匯出或原版還原包**。沒有複製原站程式碼或素材，也不與該網站、作者或任何第三方遊戲品牌有隸屬、合作或贊助關係。地名與地標僅作氛圍靈感，並非官方認證或精確地理重建。
 
 ## English
 
-**Taipei Ride** is an independent, Taipei-inspired browser riding game with six landmark check-ins and free roaming. Its default renderer provides a true 3D WebGL 2 scene and third-person follow camera using Three.js. A clearly labeled custom isometric Canvas 2D fallback shares the same world data, driving physics, controls, and check-in progress. All scene geometry is original and procedural. Append `?renderer=2d` to the URL to test the fallback explicitly.
+Taipei Ride is an original Taipei-inspired browser exploration game. Ride a scooter, park it and walk, complete a multi-stage tea-delivery quest for a one-time 300 in-game coin reward, or collect six optional landmark stamps. The default renderer uses real Three.js/WebGL 2 geometry and a third-person camera. A clearly labeled Canvas 2D compatibility renderer shares all gameplay and saved progress.
 
-Use Node.js 22. Run `npm ci` first, then `npm run dev`, `npm test`, `npm run build`, and `npm run preview`; the local server defaults to port 4173 and production output is `dist/`. Three.js 0.186.1 is the sole runtime dependency and is pinned by the lockfile. Its MIT license is included in `dist/vendor/LICENSE.three.txt`. No paid APIs, map-service keys, or external CDN are required. Serve the game over HTTP rather than opening an HTML file directly.
+Use Node.js 22, then `npm ci`, `npm run dev`, `npm test`, and `npm run build`. WASD/arrows move and turn, Space brakes, F mounts/dismounts, E interacts, P pauses, R safely returns both actor and scooter to the start without losing progress, M opens the map, and N changes day/night. Touch controls are included.
 
-Drive with WASD or arrow keys, brake with Space, check in with E when nearby and moving slowly, pause with P, reset the vehicle with R, open the map with M, and switch day/night with N. Touch controls are included. Check-in progress stays in local browser storage; R preserves it, while the separate journey-reset action asks for confirmation.
+Version 2 browser-local saves preserve actor and parked-scooter positions, travel mode, quest state, coins, stamps and atmosphere, with safe legacy-v1 migration. Full journey reset requires confirmation. No account, paid API, external CDN, real-money transaction or cloud-save service is needed.
 
-The map and driving model are fictionalized and must not be used for navigation or real-world road-safety decisions. The reference site's source code was not available to this implementation: this is an independently written, style-inspired recreation, not a backup or export of the original. It is unaffiliated with `taipei-gta.vercel.app` and does not reuse its code or assets. Original project code is released under the [MIT License](LICENSE); see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for Three.js attribution.
-
-## 驗證狀態
-
-目前 33 項自動測試通過，涵蓋核心物理、立體幾何、DOM 操作流程、備援切換與六站完成。瀏覽器 WebGL 實機與完整手機排版驗收仍待可用裝置檢查；詳見 [QA.md](QA.md)，不將模擬測試視為實機驗證。
+Playwright-based CI checks real Chromium WebGL and captures screenshots. See the exact commit's CI report rather than treating mocked DOM or offline scene tests as proof of browser rendering. Pursuit and replenishment systems remain future work. This is an independently authored game, not the reference site's source-code backup or asset copy.

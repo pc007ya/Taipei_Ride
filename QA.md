@@ -5,7 +5,7 @@ Validated on 2026-10-01 with Node.js 24.19.0.
 ## Passed
 
 - Clean lockfile install: `npm ci --ignore-scripts`
-- `npm test`: 33 tests passed, 0 failed
+- `npm test`: 51 tests passed, 0 failed
 - `npm run build`: complete static `dist/` output, with bundled Three.js and its MIT license
 - `npm audit --omit=dev`: 0 runtime vulnerabilities reported at validation time; full development-dependency audit also reported 0
 - HTTP smoke test: HTML, JavaScript modules, both Three.js vendor modules, license and favicon returned 200; missing paths returned 404
@@ -24,11 +24,25 @@ Validated on 2026-10-01 with Node.js 24.19.0.
 - Blocked storage: persistent notice before play plus one-time save-failure notification
 - Landscape CSS regression: short desktop rules require fine pointer; coarse-pointer HUD stays above touch controls (static rule verification)
 
+## P0 gameplay extension
+
+- Shared walking/riding modes, independent parked-vehicle position, low-speed and near-distance restrictions, safe dismount paths and blocked through-wall boarding
+- Original tea-delivery quest: accept → pick up → ride at least 100 game units → dismount → deliver → one-time 300-coin reward
+- Wrong station, missing acceptance/pickup, walking-only transport and mounted delivery are rejected
+- Version 2 save round trips preserve separate actor/vehicle positions, mode, quest, reward flag, coins, stamps and atmosphere; legacy v1 migrates safely
+- Invalid coordinates, nonfinite values, unsupported stages and inconsistent reward flags are sanitized
+- DOM integration covers F/E and touch-button mode changes, delivery, reward persistence, retracking and full reset
+- Actual 3D scene-state tests verify mounted-rider visibility, separate walking actor/parked scooter, and transfer/removal of the delivery parcel
+
+## Live browser CI (separate evidence)
+
+The workflow now runs Playwright against actual Chromium WebGL 2 in desktop, portrait and landscape viewports. It records framebuffer evidence, screenshots and traces; it includes a full delivery route driven with normal keyboard controls. The local test result above does **not** assert that this new CI browser run has passed. Inspect the exact commit's completed CI jobs and artifacts for that evidence. An optional, separate reference capture does not determine whether this game's own tests pass.
+
 ## Verification limits
 
 DOM-flow tests simulate a document with jsdom and stub drawing calls. They are not real-browser end-to-end tests. Offline scene inspection is not a screenshot of the WebGL renderer.
 
-A live desktop/mobile WebGL playthrough and full browser-layout visual review have not been completed in the available validation environment. Check those on a browser with WebGL 2 before claiming device-wide compatibility or production visual sign-off. The application automatically identifies and uses the separately labeled Canvas 2D compatibility renderer when WebGL initialization fails.
+No live WebGL/browser-layout result is claimed by this local validation checkpoint. The GitHub Actions browser jobs are the independent route for current Chromium/WebGL evidence; do not claim device-wide compatibility or production visual sign-off from unit tests or mere workflow configuration. The application automatically identifies and uses the separately labeled Canvas 2D compatibility renderer when WebGL initialization fails.
 
 ## Occlusion investigation and corrections
 
@@ -42,9 +56,9 @@ These corrections have automated raycast/geometry regression coverage. They do n
 
 1. Run `npm ci && npm run dev` and open the displayed local URL in a current browser.
 2. Confirm the `3D 漫遊` label, visible scooter and third-person chase camera.
-3. Start, ride north to the first glowing landmark ring, brake, and press E to collect it.
+3. Start, ride north to 阿沐茶舖, brake and press E to accept the main quest. Follow the pickup → ride → dismount → delivery flow. Separately select a landmark from the stamp rail to test the collection side quest.
 4. Open the map and select another stop, then test turning, reversing, collision and R reset. Hold throttle + left/right through several turns; the rider should remain visible as the camera shortens near buildings.
 5. Toggle night with N, pause/resume with P, and switch browser tabs while accelerating. Returning should leave the game paused.
-6. Refresh to confirm stamp/night persistence. Cancel the journey-reset prompt once, then explicitly reset if desired.
+6. Refresh while walking away from a parked scooter and during an active delivery to verify both positions, travel mode, quest stage, stamps and atmosphere. Cancel the full-reset prompt once, then confirm it and verify coins, quest, actor/vehicle positions and collection all reset together.
 7. On a touch device, hold steering and throttle together; release, drag away and interrupt the gesture to check cancellation. Check landscape: the speed display and minimap must sit above the touch controls. If browser storage is disabled, the visible warning must explain that progress will not survive refresh.
 8. Open `?renderer=2d` to verify the clearly labeled compatibility mode. Test both portrait and landscape layouts.

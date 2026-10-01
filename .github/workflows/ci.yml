@@ -20,3 +20,55 @@ jobs:
         with:
           name: taipei-ride-static
           path: dist
+  browser:
+    name: WebGL browser (${{ matrix.project }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [desktop, portrait, landscape]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Install official Chromium and runtime dependencies
+        run: npx playwright install --with-deps chromium
+      - name: Install Traditional Chinese screenshot fonts
+        run: sudo apt-get install -y fonts-noto-cjk
+      - name: Run live WebGL browser tests
+        run: npm run test:browser -- --project=${{ matrix.project }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: taipei-ride-webgl-${{ matrix.project }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+  reference:
+    name: Optional reference screenshots
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: sudo apt-get install -y fonts-noto-cjk
+      - name: Capture public reference separately
+        run: node tests/browser/reference-capture.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: taipei-ride-reference
+          path: test-results/reference/
+          retention-days: 14

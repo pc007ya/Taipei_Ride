@@ -12,7 +12,9 @@
     "check": "npm test && npm run build",
     "predev": "node scripts/vendor.mjs",
     "prebuild": "node scripts/vendor.mjs",
-    "pretest": "node scripts/vendor.mjs"
+    "pretest": "node scripts/vendor.mjs",
+    "test:browser": "playwright test",
+    "pretest:browser": "npm run build"
   },
   "engines": {
     "node": ">=20"
@@ -22,6 +24,7 @@
     "three": "0.186.1"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "jsdom": "26.1.0"
   }
 }

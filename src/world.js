@@ -97,3 +97,39 @@ export function cleanProgress(data) {
   if(!data||typeof data!=='object') return { stamps:[],distance:0,night:false };
   return {stamps:Array.isArray(data.stamps)?[...new Set(data.stamps.filter(id=>LANDMARKS.some(l=>l.id===id)))]:[],distance:typeof data.distance==='number'&&Number.isFinite(data.distance)?clamp(data.distance,0,1e9):0,night:data.night===true};
 }
+
+export function syncVehicle(player,vehicle){Object.assign(vehicle,{x:player.x,y:player.y,angle:player.angle,speed:player.speed});}
+export function updateWalker(p,input,dt,world,vehicle=null){
+ dt=clamp(dt,0,.04);
+ const steering=(input.right?1:0)-(input.left?1:0);p.angle+=steering*2.8*dt;
+ const direction=(input.throttle?1:0)-(input.reverse?1:0),desired=input.brake?0:direction*(direction<0?12:21);
+ p.speed+=(desired-p.speed)*Math.min(1,dt*12);if(Math.abs(p.speed)<.15)p.speed=0;
+ const dx=Math.cos(p.angle)*p.speed*dt,dy=Math.sin(p.angle)*p.speed*dt;
+ const blocked=(x,y)=>collides(x,y,world.obstacles,6)||(vehicle&&Math.hypot(x-vehicle.x,y-vehicle.y)<12);
+ const before={x:p.x,y:p.y};let hit=false;
+ if(!blocked(p.x+dx,p.y))p.x+=dx;else hit=true;
+ if(!blocked(p.x,p.y+dy))p.y+=dy;else hit=true;
+ if(hit)p.speed=0;p.distance+=distance(before,p);p.collisionCooldown=Math.max(0,p.collisionCooldown-dt);return hit;
+}
+export function findDismountPosition(vehicle,world,traffic=[]){
+ const angles=[Math.PI/2,-Math.PI/2,Math.PI,0,Math.PI/4,-Math.PI/4,3*Math.PI/4,-3*Math.PI/4];
+ for(const radius of [20,27,34])for(const offset of angles){
+  const angle=vehicle.angle+offset,candidate={x:vehicle.x+Math.cos(angle)*radius,y:vehicle.y+Math.sin(angle)*radius};
+  if(collides(candidate.x,candidate.y,world.obstacles,6)||traffic.some(car=>distance(car,candidate)<22))continue;
+  let clear=true;for(let step=1;step<=Math.ceil(radius/3);step++){const t=step/Math.ceil(radius/3);if(collides(vehicle.x+(candidate.x-vehicle.x)*t,vehicle.y+(candidate.y-vehicle.y)*t,world.obstacles,6)){clear=false;break;}}
+  if(clear)return {...candidate,angle:vehicle.angle};
+ }
+ return null;
+}
+export function changeTravelMode(state,world,traffic=[]){
+ if(state.mode==='riding'){
+  if(Math.abs(state.player.speed)>=8)return {ok:false,message:'速度太快，先煞車慢下來再下車'};
+  syncVehicle(state.player,state.vehicle);state.vehicle.speed=0;
+  const safe=findDismountPosition(state.vehicle,world,traffic);if(!safe)return {ok:false,message:'旁邊沒有安全落腳處，挪動機車再試一次'};
+  state.mode='walking';Object.assign(state.player,safe,{speed:0,collisionCooldown:0});return {ok:true,message:'已下車，機車停在原地；靠近後按 F 上車'};
+ }
+ if(distance(state.player,state.vehicle)>=34)return {ok:false,message:`離機車還有 ${Math.ceil(distance(state.player,state.vehicle))} m，靠近後才能上車`};
+ const steps=Math.ceil(distance(state.player,state.vehicle)/3);for(let i=1;i<=steps;i++){const t=i/steps;if(collides(state.player.x+(state.vehicle.x-state.player.x)*t,state.player.y+(state.vehicle.y-state.player.y)*t,world.obstacles,6))return {ok:false,message:'中間有障礙，請繞到機車旁再上車'};}
+ if(collides(state.vehicle.x,state.vehicle.y,world.obstacles,8))return {ok:false,message:'機車位置受阻，可按 R 將人車一起移回起點'};
+ state.mode='riding';Object.assign(state.player,{x:state.vehicle.x,y:state.vehicle.y,angle:state.vehicle.angle,speed:0,collisionCooldown:0});state.vehicle.speed=0;return {ok:true,message:'已上車，沿著街道繼續前進'};
+}

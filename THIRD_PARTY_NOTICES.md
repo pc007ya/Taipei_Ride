@@ -34,3 +34,5 @@ The reference site's source code was not available to this implementation. This 
 ## Development-only tooling
 
 Automated DOM-flow tests use jsdom 26.1.0 (MIT) and its npm dependencies. These development packages are pinned in package-lock.json and are not included in the static game bundle. Their package license files remain with the installed development dependencies.
+
+- **@playwright/test 1.63.0**, Playwright and playwright-core are development-only browser-test tools, licensed under **Apache License 2.0**. Official project: [microsoft/playwright](https://github.com/microsoft/playwright). Their complete license files are retained in the installed development packages at `node_modules/@playwright/test/LICENSE`, `node_modules/playwright/LICENSE` and `node_modules/playwright-core/LICENSE`. They and the downloaded Chromium test browser are not included in the static game bundle. Chromium retains its own upstream and bundled-component licenses.

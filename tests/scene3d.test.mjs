@@ -161,3 +161,15 @@ test('actual 3D render loop keeps rider in front of camera and inside desktop/mo
   }
  }
 });
+
+test('3D mode separates parked scooter from walking actor and moves delivery cargo',async()=>{
+ const T=await import('../vendor/three.module.js');const {Renderer3D,createCameraBlockers}=await import('../src/renderer3d.js');
+ const world=createWorld(),made=createCity(world),player={x:820,y:515,angle:-Math.PI/2,speed:0},vehicle={x:800,y:515,angle:-Math.PI/2,speed:0},r=Object.create(Renderer3D.prototype);
+ globalThis.innerWidth=1440;globalThis.innerHeight=960;
+ Object.assign(r,{time:0,lastNight:null,scene:new T.Scene(),camera:new T.PerspectiveCamera(58,1.5,1,1800),cameraBlockers:createCameraBlockers(world),light:new T.HemisphereLight(),sun:new T.DirectionalLight(),glass:made.glass,lampMaterial:made.lampMaterial,softOccluders:made.softOccluders,scooter:createScooter(),carMeshes:[],markers:[],pedestrians:[],heading:player.angle,look:new T.Vector3(820,16,515),renderer:{render(scene,camera){scene.updateMatrixWorld(true);camera.updateMatrixWorld(true);},toneMappingExposure:1}});
+ r.scene.background=new T.Color();r.scene.fog=new T.Fog(0,0,1);r.scene.add(made.city,r.scooter);r.camera.position.set(820,85,660);
+ const state={player,vehicle,mode:'walking',traffic:[],night:false,stamps:[],target:null,quest:{stage:'deliver'}};r.render(state,.02);
+ assert.equal(r.scooter.position.x,800);assert.equal(r.walker.position.x,820);assert.equal(r.walker.visible,true);assert.ok(r.scooter.children.filter(p=>p.userData.riderPart).every(p=>!p.visible));assert.equal(r.walker.getObjectByName('delivery-cargo').visible,true);assert.equal(r.scooter.getObjectByName('delivery-cargo').visible,false);
+ state.mode='riding';player.x=800;r.render(state,.02);assert.equal(r.walker.visible,false);assert.ok(r.scooter.children.filter(p=>p.userData.riderPart).every(p=>p.visible));assert.equal(r.scooter.getObjectByName('delivery-cargo').visible,true);
+ state.quest.stage='completed';r.render(state,.02);assert.equal(r.scooter.getObjectByName('delivery-cargo').visible,false);
+});

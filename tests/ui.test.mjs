@@ -24,8 +24,8 @@ test('unsupported WebGL automatically falls back with a clear compatibility labe
  assert.equal(snapshot().started,false);assert.equal(snapshot().renderMode,'2d');assert.equal($('render-mode').textContent,'2D 相容模式');assert.equal($('stamp-rail').children.length,6);frame();
 });
 test('keyboard driving reaches first stamp; collection advances mission and saves',()=>{
- click('start');assert.equal(snapshot().started,true);key('keydown','KeyW');frame(80);key('keyup','KeyW');key('keydown','Space');frame(40);key('keyup','Space');
- const p=snapshot().player;assert.ok(p.y<455&&p.y>365,`Reached market: y=${p.y}`);assert.ok(Math.abs(p.speed)<8);key('keydown','KeyE');frame();assert.deepEqual(snapshot().stamps,['market']);assert.equal(snapshot().target,'tower');assert.equal($('stamp-dialog').open,true);assert.deepEqual(JSON.parse(localStorage.getItem('taipei-ride:v1')).stamps,['market']);
+ click('start');document.querySelector('#stamp-rail button').click();assert.equal(snapshot().started,true);key('keydown','KeyW');frame(80);key('keyup','KeyW');key('keydown','Space');frame(40);key('keyup','Space');
+ const p=snapshot().player;assert.ok(p.y<455&&p.y>365,`Reached market: y=${p.y}`);assert.ok(Math.abs(p.speed)<8);key('keydown','KeyE');frame();assert.deepEqual(snapshot().stamps,['market']);assert.equal(snapshot().target,'tower');assert.equal($('stamp-dialog').open,true);assert.deepEqual(JSON.parse(localStorage.getItem('taipei-ride:v2')).stamps,['market']);
  click('next-stop');assert.equal(snapshot().paused,false);
 });
 test('map changes destination and cleanly resumes without losing stamps',()=>{
@@ -35,7 +35,7 @@ test('pause clears held throttle and reset vehicle preserves progress',()=>{
  key('keydown','KeyW');frame(15);key('keydown','KeyP');frame();const p=snapshot().player;frame(40);assert.deepEqual(snapshot().player,p);click('resume');const speed=snapshot().player.speed;frame(20);assert.ok(snapshot().player.speed<speed);key('keydown','KeyR');frame();assert.equal(snapshot().player.x,800);assert.equal(snapshot().player.y,515);assert.deepEqual(snapshot().stamps,['market']);
 });
 test('night mode persists and touch pointer cancellation releases throttle',()=>{
- key('keydown','KeyN');assert.equal(snapshot().night,true);assert.equal(JSON.parse(localStorage.getItem('taipei-ride:v1')).night,true);
+ key('keydown','KeyN');assert.equal(snapshot().night,true);assert.equal(JSON.parse(localStorage.getItem('taipei-ride:v2')).night,true);
  const throttle=document.querySelector('[data-control="throttle"]');throttle.dispatchEvent(new window.Event('pointerdown',{bubbles:true,cancelable:true}));frame(25);assert.ok(snapshot().player.speed>0);throttle.dispatchEvent(new window.Event('pointercancel',{bubbles:true}));const speed=snapshot().player.speed;frame(25);assert.ok(snapshot().player.speed<speed);
 });
 test('reset confirmation cancel retains stamps; explicit confirmation clears journey',()=>{
