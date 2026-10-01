@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        scenario: [phone-missions, phone-mrt, phone-help, walk, drive, wanted]
+        scenario: [walk, walk-light, drive, mrt-entry]
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
