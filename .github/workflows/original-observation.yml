@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        scenario: [phone-map, walk, drive, wanted]
+        scenario: [phone-missions, phone-mrt, phone-help, walk, drive, wanted]
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -25,7 +25,7 @@ jobs:
       - name: Capture one normal-input scenario
         env:
           SCENARIO: ${{ matrix.scenario }}
-        run: timeout --signal=TERM --kill-after=10s 7m node tests/browser/reference-inspect-scenario.mjs
+        run: timeout --signal=TERM --kill-after=10s 9m node tests/browser/reference-inspect-scenario.mjs
       - name: Preserve already captured observations
         if: always()
         uses: actions/upload-artifact@v4
