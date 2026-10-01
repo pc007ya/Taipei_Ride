@@ -9,6 +9,8 @@ const browser=await chromium.launch({args:['--use-gl=angle','--use-angle=swiftsh
 const context=await browser.newContext({viewport:{width:1440,height:960},recordVideo:{dir:`${out}/video`,size:{width:1440,height:960}}});
 await context.route('**/*',r=>['GET','HEAD','OPTIONS'].includes(r.request().method())?r.continue():r.abort());
 const page=await context.newPage();
+page.setDefaultTimeout(120000);
+page.setDefaultNavigationTimeout(120000);
 page.on('pageerror',e=>report.errors.push(e.message));
 const t0=Date.now();
 async function snap(name){
