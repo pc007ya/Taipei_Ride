@@ -5,7 +5,7 @@ Validated on 2026-10-01 with Node.js 24.19.0.
 ## Passed
 
 - Clean lockfile install: `npm ci --ignore-scripts`
-- `npm test`: 51 tests passed, 0 failed
+- `npm test`: 52 tests passed, 0 failed
 - `npm run build`: complete static `dist/` output, with bundled Three.js and its MIT license
 - `npm audit --omit=dev`: 0 runtime vulnerabilities reported at validation time; full development-dependency audit also reported 0
 - HTTP smoke test: HTML, JavaScript modules, both Three.js vendor modules, license and favicon returned 200; missing paths returned 404
@@ -36,13 +36,23 @@ Validated on 2026-10-01 with Node.js 24.19.0.
 
 ## Live browser CI (separate evidence)
 
-The workflow now runs Playwright against actual Chromium WebGL 2 in desktop, portrait and landscape viewports. It records framebuffer evidence, screenshots and traces; it includes a full delivery route driven with normal keyboard controls. The local test result above does **not** assert that this new CI browser run has passed. Inspect the exact commit's completed CI jobs and artifacts for that evidence. An optional, separate reference capture does not determine whether this game's own tests pass.
+Playwright runs against actual Chromium WebGL 2 (SwiftShader software graphics) in desktop, portrait and landscape viewports. It records framebuffer evidence, milestone screenshots and DOM/API traces; the full delivery route uses normal keyboard controls without teleportation or clock modification. An optional, separate reference capture does not determine whether this game's own tests pass.
+
+First live checkpoint: [run 36873918648](https://github.com/pc007ya/Taipei_Ride/actions/runs/36873918648), commit `c9baed92c7d78603cbf31967445703c2c6affbd0`:
+
+- Unit/build job passed (51 tests at that commit)
+- Portrait 390×844 and landscape 844×390 WebGL browser flows passed: actual 3D framebuffer, driving, collecting a stamp, map, pause, night, reload persistence, walking/remounting, high-speed dismount rejection, multi-touch cancellation and full reset
+- Portrait framebuffer recorded WebGL 2.0, ANGLE SwiftShader, 27–28 sampled colors, no lost context and GL error 0; screenshots were visually inspected
+- Desktop 1440×960 genuinely rendered (41 sampled colors, GL error 0), but both full tests timed out, so desktop completion is **not** claimed for this run. Route telemetry shows continuous progress through acceptance and toward pickup, not a stationary deadlock
+- The optional reference job timed out while downloading Ubuntu dependencies/fonts, before opening the reference site; this is not evidence of a site block
+
+Follow-up changes preserve all required interactions and assertions, remove continuous trace screencasting (explicit screenshots remain), and allow longer wall-clock budgets for software graphics. The long continuous delivery route uses a standard 1280×720 desktop viewport to reduce software-GPU fill cost; the separate desktop UI smoke test retains 1440×960. Visual review also found landscape map alignment clipping the initial map; the map is now top-aligned and has a new unit test plus a browser viewport-bounds assertion. Inspect the exact latest commit's completed jobs and screenshot artifacts for the rerun outcome; configuration or a queued run alone does not count as success.
 
 ## Verification limits
 
 DOM-flow tests simulate a document with jsdom and stub drawing calls. They are not real-browser end-to-end tests. Offline scene inspection is not a screenshot of the WebGL renderer.
 
-No live WebGL/browser-layout result is claimed by this local validation checkpoint. The GitHub Actions browser jobs are the independent route for current Chromium/WebGL evidence; do not claim device-wide compatibility or production visual sign-off from unit tests or mere workflow configuration. The application automatically identifies and uses the separately labeled Canvas 2D compatibility renderer when WebGL initialization fails.
+The completed mobile-viewport Chromium results above are real browser rendering, but mobile emulation is not a physical-device test. Desktop completion and the latest map correction require their completed rerun evidence. Hardware GPU performance, physical phone browsers and device-wide compatibility are not established by software-renderer CI or unit tests. The application automatically identifies and uses the separately labeled Canvas 2D compatibility renderer when WebGL initialization fails.
 
 ## Occlusion investigation and corrections
 

@@ -18,7 +18,7 @@ async function followRoad(page, waypoints, telemetry) {
     await page.keyboard[enabled ? 'down' : 'up'](key);
     if (enabled) held.add(key); else held.delete(key);
   }
-  const deadline = Date.now() + 210_000;
+  const deadline = Date.now() + 600_000;
   try {
     for (const [x, y] of waypoints) {
       while (true) {
@@ -44,7 +44,7 @@ async function followRoad(page, waypoints, telemetry) {
 
 test('complete original delivery quest through live WebGL and real controls', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop', 'Long continuous driving route runs once; all layouts run the general live browser smoke test.');
-  test.setTimeout(540_000);
+  test.setTimeout(1_200_000);
   const errors = [], telemetry = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()); });
@@ -54,6 +54,10 @@ test('complete original delivery quest through live WebGL and real controls', as
     await testInfo.attach(name, { path, contentType: 'image/png' });
   }
   try {
+    // The separate desktop smoke test retains 1440×960. A conventional 720p
+    // desktop viewport reduces software-GPU fill cost for this long real route.
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await testInfo.attach('execution-viewport', { body: JSON.stringify({ width: 1280, height: 720, graphics: 'real WebGL 2 via Chromium SwiftShader', input: 'normal keyboard', clock: 'unmodified' }), contentType: 'application/json' });
     await page.goto('/');
     await page.waitForFunction(() => window.taipeiRide);
     await expect(page.locator('#render-mode')).toHaveText('3D 漫遊');

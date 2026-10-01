@@ -63,6 +63,13 @@ test('real WebGL game: drive, stamp, map, pause, save, reset and touch layout', 
 
   await page.keyboard.press('m');
   await expect(page.locator('#map-dialog')).toBeVisible();
+  if (isMobile && page.viewportSize().width > page.viewportSize().height) {
+    const map = await page.locator('#large-map').boundingBox();
+    const dialog = await page.locator('#map-dialog').boundingBox();
+    expect(map.y).toBeGreaterThanOrEqual(dialog.y);
+    expect(map.y + map.height).toBeLessThanOrEqual(dialog.y + dialog.height);
+    expect(map.y + map.height).toBeLessThanOrEqual(page.viewportSize().height);
+  }
   await capture(page, testInfo, '04-map');
   await page.locator('#map-destinations button').nth(4).click();
   await expect.poll(async () => (await snapshot(page)).target).toBe('temple');

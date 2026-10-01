@@ -5,7 +5,9 @@ import { defineConfig } from '@playwright/test';
 export default defineConfig({
   testDir: './tests/browser',
   testMatch: '**/*.spec.mjs',
-  timeout: 120_000,
+  // Software WebGL on shared runners is much slower than hardware rendering.
+  // Keep every assertion and interaction; allow the full UI flow to finish.
+  timeout: 240_000,
   expect: { timeout: 30_000 },
   fullyParallel: false,
   workers: 1,
@@ -15,7 +17,9 @@ export default defineConfig({
   use: {
     baseURL: 'http://127.0.0.1:4175',
     browserName: 'chromium',
-    trace: 'on',
+    // Explicit milestone PNGs are attached by the tests. Avoid a continuous
+    // screencast of every driving input; retain DOM/API trace and source evidence.
+    trace: { mode: 'on', screenshots: false, snapshots: true, sources: true },
     screenshot: 'only-on-failure',
     launchOptions: { args: ['--use-gl=angle', '--use-angle=swiftshader-webgl', '--enable-unsafe-swiftshader'] },
   },

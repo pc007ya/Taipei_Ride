@@ -23,7 +23,7 @@ jobs:
   browser:
     name: WebGL browser (${{ matrix.project }})
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -49,11 +49,17 @@ jobs:
             playwright-report/
             test-results/
           retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: taipei-ride-screenshots-${{ matrix.project }}
+          path: test-results/**/*.png
+          retention-days: 14
   reference:
     name: Optional reference screenshots
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 15
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
