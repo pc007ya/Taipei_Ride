@@ -5,7 +5,7 @@ Validated on 2026-10-01 with Node.js 24.19.0.
 ## Passed
 
 - Clean lockfile install: `npm ci --ignore-scripts`
-- `npm test`: 56 tests passed, 0 failed
+- `npm test`: 62 tests passed, 0 failed
 - `npm run build`: complete static `dist/` output, with bundled Three.js and its MIT license
 - `npm audit --omit=dev`: 0 runtime vulnerabilities reported at validation time; full development-dependency audit also reported 0
 - HTTP smoke test: HTML, JavaScript modules, both Three.js vendor modules, license and favicon returned 200; missing paths returned 404
@@ -43,6 +43,14 @@ Validated on 2026-10-01 with Node.js 24.19.0.
 - Repeated static details are instanced; decorative pedestrians use shared single-mesh geometry/materials
 - Four added geometry/footprint tests bring the local suite to 56 passing tests; gameplay, collision rules and save schema are unchanged
 - Offline geometry images are diagnostic only. This visual revision needs its own live WebGL CI evidence; successful screenshots from earlier commits do not establish its appearance
+
+## Adaptive rendering correction
+
+The visual revision's [run 36880136179](https://github.com/pc007ya/Taipei_Ride/actions/runs/36880136179), commit `672ba0bac190da8084caa7edbfe5d83f10572d93`, passed 56 unit tests/build, portrait and landscape browser flows, and the complete 1440×960 desktop smoke test (3.6 minutes). Its continuous desktop delivery route did **not** pass: after acceptance, pickup and the riding requirement, the 600-second final-road-leg budget ended around `(144.6, 849.8)`, approximately 162 game units before delivery. The 19-minute trace records continued movement, rather than a stationary collision deadlock. The separate reference job captured both desktop and portrait after Start without a CAPTCHA or JavaScript error.
+
+The correction measures actual frame-to-frame wall time independently of simulation `dt`. A window needs at least three seconds, six frames and 70% slow frames before reducing the drawing pixel ratio by 20%, down to 0.55. Recovery requires twelve seconds of sustained fast frames, with smaller upward steps. Hidden tabs and isolated long hitches do not masquerade as sustained load. The WebGL renderer, world geometry, physics, quest distance and normal controls remain unchanged; the CSS/UI size and camera aspect stay at the viewport size.
+
+Six independent controller/resize/render-state tests bring the local suite to 62 passing tests. Read-only snapshots report the effective pixel ratio, actual drawing-buffer size and CSS dimensions. Live browser tests now compare these metrics with the actual WebGL buffer, check the retained viewport size after orientation/size changes, and preserve all prior gameplay steps and assertions. The final road-route timeout has **not** been increased again. Successful final CI and clear new screenshots are required before claiming the adaptive revision passed.
 
 ## Live browser CI (separate evidence)
 

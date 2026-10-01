@@ -22,9 +22,12 @@ async function followRoad(page, waypoints, telemetry) {
   try {
     for (const [x, y] of waypoints) {
       while (true) {
-        const { player, mode, quest } = await snapshot(page);
+        const { player, mode, quest, effectiveRenderScale, drawingBufferWidth, drawingBufferHeight } = await snapshot(page);
         const remaining = Math.hypot(x-player.x, y-player.y);
-        if (remaining < 10) break;
+        if (remaining < 10) {
+          console.log(`Reached road waypoint (${x}, ${y}) at (${player.x.toFixed(1)}, ${player.y.toFixed(1)}); quest ${quest.stage}; render scale ${effectiveRenderScale}`);
+          break;
+        }
         if (Date.now() > deadline) throw new Error(`Road traversal timed out near ${player.x.toFixed(1)},${player.y.toFixed(1)}, heading ${player.angle.toFixed(2)}; goal ${x},${y}`);
         const desired = Math.atan2(y-player.y, x-player.x);
         const error = Math.atan2(Math.sin(desired-player.angle), Math.cos(desired-player.angle));
@@ -34,7 +37,7 @@ async function followRoad(page, waypoints, telemetry) {
         await hold('d', error > .035);
         await hold('Space', braking);
         await hold('w', !braking);
-        if (telemetry.length === 0 || Date.now()-telemetry.at(-1).time > 1500) telemetry.push({ time: Date.now(), x: player.x, y: player.y, angle: player.angle, speed: player.speed, goal: [x,y], mode, stage: quest.stage });
+        if (telemetry.length === 0 || Date.now()-telemetry.at(-1).time > 1500) telemetry.push({ time: Date.now(), x: player.x, y: player.y, angle: player.angle, speed: player.speed, goal: [x,y], mode, stage: quest.stage, effectiveRenderScale, drawingBufferWidth, drawingBufferHeight });
         await page.waitForTimeout(80);
       }
     }
@@ -49,6 +52,8 @@ test('complete original delivery quest through live WebGL and real controls', as
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()); });
   async function capture(name) {
+    const { effectiveRenderScale, drawingBufferWidth, drawingBufferHeight, renderCssWidth, renderCssHeight } = await snapshot(page);
+    await testInfo.attach(`${name}-render-metrics`, { body: JSON.stringify({ effectiveRenderScale, drawingBufferWidth, drawingBufferHeight, renderCssWidth, renderCssHeight }), contentType: 'application/json' });
     const path = testInfo.outputPath(`${name}.png`);
     await page.screenshot({ path, fullPage: true });
     await testInfo.attach(name, { path, contentType: 'image/png' });

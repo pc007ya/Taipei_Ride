@@ -264,12 +264,38 @@ export function createCity(world){
   batchStaticBoxes(city);
   return {city,glass,lampMaterial,foliage,softOccluders};
 }
+// Render-only quality control. Timestamps are real wall-clock milliseconds, not
+// the capped simulation dt: neither movement nor quest time is accelerated.
+export class AdaptiveRenderScale{
+ constructor(pixelRatio=1){this.minScale=.55;this.ceiling=this.pixelRatioCeiling(pixelRatio);this.scale=this.ceiling;this.resetTiming();}
+ pixelRatioCeiling(value){return Math.max(this.minScale,Math.min(1.6,Number.isFinite(value)&&value>0?value:1));}
+ resetTiming(){this.lastTimestamp=null;this.windowMs=0;this.frames=0;this.slowFrames=0;this.fastMs=0;}
+ setCeiling(pixelRatio){this.ceiling=this.pixelRatioCeiling(pixelRatio);this.scale=Math.min(this.scale,this.ceiling);this.resetTiming();return this.scale;}
+ sample(timestamp,visible=true){
+  if(!visible||!Number.isFinite(timestamp)){this.resetTiming();return false;}
+  if(this.lastTimestamp===null){this.lastTimestamp=timestamp;return false;}
+  const elapsed=timestamp-this.lastTimestamp;this.lastTimestamp=timestamp;
+  // Invalid/repeated timestamps cannot contribute to quality decisions.
+  if(elapsed<=0){this.resetTiming();this.lastTimestamp=timestamp;return false;}
+  this.windowMs+=elapsed;this.frames++;if(elapsed>45)this.slowFrames++;
+  if(this.windowMs<3000||this.frames<6)return false;
+  const meanMs=this.windowMs/this.frames,duration=this.windowMs,slowFraction=this.slowFrames/this.frames;this.windowMs=0;this.frames=0;this.slowFrames=0;
+  let next=this.scale;
+  // At least 70% slow frames prevents one OS/debugger hitch from forcing a drop.
+  if(meanMs>45&&slowFraction>=.7){this.fastMs=0;next=Math.max(this.minScale,this.scale*.8);}
+  else if(meanMs<22){this.fastMs+=duration;if(this.fastMs>=12000){next=Math.min(this.ceiling,this.scale+.1);this.fastMs=0;}}
+  else this.fastMs=0;
+  next=Math.min(this.ceiling,Math.max(this.minScale,Math.round(next*10000)/10000));
+  if(Math.abs(next-this.scale)<.00001)return false;
+  this.scale=next;return true;
+ }
+}
 export class Renderer3D{
   constructor(canvas,world){
     this.canvas=canvas;
     // Context creation is the only capability check. If it fails, main.js uses Canvas 2D.
     this.renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.6));this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.1;
+    this.renderScale=new AdaptiveRenderScale(globalThis.devicePixelRatio||1);this.renderer.setPixelRatio(this.renderScale.scale);this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.1;
     this.scene=new THREE.Scene();this.scene.background=new THREE.Color(PALETTE.sky);this.scene.fog=new THREE.Fog(PALETTE.sky,350,1150);
     this.camera=new THREE.PerspectiveCamera(58,innerWidth/innerHeight,1,1800);this.camera.position.set(800,85,660);
     this.cameraBlockers=createCameraBlockers(world);
@@ -282,8 +308,20 @@ export class Renderer3D{
     this.pedestrians=Array.from({length:20},(_,i)=>{const g=createPedestrian([0xc9815e,0x799aab,0xcdbd78][i%3]);this.scene.add(g);return g;});
     this.time=0;this.lastNight=null;this.look=new THREE.Vector3(800,16,515);this.heading=-Math.PI/2;this.resize();
   }
-  resize(){this.renderer.setSize(innerWidth,innerHeight);this.camera.aspect=innerWidth/innerHeight;this.camera.fov=innerWidth<650?66:58;this.camera.updateProjectionMatrix();}
+  resize(width=innerWidth,height=innerHeight,pixelRatio=globalThis.devicePixelRatio||1){
+    this.cssWidth=Math.max(1,Math.round(width));this.cssHeight=Math.max(1,Math.round(height));
+    if(this.renderScale)this.renderer.setPixelRatio(this.renderScale.setCeiling(pixelRatio));
+    this.renderer.setSize(this.cssWidth,this.cssHeight);this.camera.aspect=this.cssWidth/this.cssHeight;this.camera.fov=this.cssWidth<650?66:58;this.camera.updateProjectionMatrix();
+  }
+  updateRenderScale(timestamp=performance.now(),visible=typeof document==='undefined'||!document.hidden){
+    if(this.renderScale?.sample(timestamp,visible)){this.renderer.setPixelRatio(this.renderScale.scale);return true;}return false;
+  }
+  getRenderMetrics(){
+    const size=this.renderer.getDrawingBufferSize(new THREE.Vector2());
+    return {effectiveRenderScale:this.renderer.getPixelRatio(),drawingBufferWidth:size.x,drawingBufferHeight:size.y,renderCssWidth:this.cssWidth,renderCssHeight:this.cssHeight};
+  }
   render(state,dt){
+    this.updateRenderScale();
     const {player,traffic,night,stamps,target}=state;this.time+=dt;
     if(this.lastNight!==night){this.lastNight=night;const bg=night?0x112835:PALETTE.sky;this.scene.background.set(bg);this.scene.fog.color.set(bg);this.light.intensity=night?.95:2.4;this.sun.intensity=night?.5:2.3;this.sun.color.set(night?0xb9cddc:0xffefcb);this.glass.emissiveIntensity=night?1.15:0;this.lampMaterial.emissiveIntensity=night?2:.1;for(const entry of this.softOccluders)if(entry.mesh.userData.lampLight)entry.mesh.material.emissiveIntensity=night?2:.1;this.renderer.toneMappingExposure=night?1.05:1.1;}
     const walking=state.mode==='walking',carrying=state.quest?.stage==='carrying'||state.quest?.stage==='deliver';this.scooter.getObjectByName('delivery-cargo').visible=carrying&&!walking;applyVehiclePose(this.scooter,walking?state.vehicle:player);setMountedRiderVisible(this.scooter,!walking);

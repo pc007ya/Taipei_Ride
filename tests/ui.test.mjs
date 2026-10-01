@@ -21,7 +21,7 @@ function frame(n=1){for(let i=0;i<n;i++){clock+=20;const callbacks=queuedFrames;
 function click(id){$(id).click();frame();}
 
 test('unsupported WebGL automatically falls back with a clear compatibility label',()=>{
- assert.equal(snapshot().started,false);assert.equal(snapshot().renderMode,'2d');assert.equal($('render-mode').textContent,'2D 相容模式');assert.equal($('stamp-rail').children.length,6);frame();
+ assert.equal(snapshot().started,false);assert.equal(snapshot().renderMode,'2d');for(const key of ['effectiveRenderScale','drawingBufferWidth','drawingBufferHeight','renderCssWidth','renderCssHeight'])assert.equal(snapshot()[key],null);assert.equal($('render-mode').textContent,'2D 相容模式');assert.equal($('stamp-rail').children.length,6);frame();
 });
 test('keyboard driving reaches first stamp; collection advances mission and saves',()=>{
  click('start');document.querySelector('#stamp-rail button').click();assert.equal(snapshot().started,true);key('keydown','KeyW');frame(80);key('keyup','KeyW');key('keydown','Space');frame(40);key('keyup','Space');

@@ -16,6 +16,8 @@ async function assertLiveWebGL(page, testInfo) {
     const gl = canvas.getContext('webgl2');
     if (!gl) return resolve({ webgl2: false });
     const debug = gl.getExtension('WEBGL_debug_renderer_info');
+    const metrics = window.taipeiRide.snapshot();
+    const css = canvas.getBoundingClientRect();
     const colors = new Set(), pixel = new Uint8Array(4);
     // Sample the live framebuffer during the render frame, before the browser
     // discards a non-preserved drawing buffer. No drawing APIs are replaced.
@@ -23,7 +25,7 @@ async function assertLiveWebGL(page, testInfo) {
       gl.readPixels(Math.floor(gl.drawingBufferWidth*x/12), Math.floor(gl.drawingBufferHeight*y/10), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
       colors.add([...pixel].join(','));
     }
-    resolve({ webgl2: gl instanceof WebGL2RenderingContext, contextLost: gl.isContextLost(), width: gl.drawingBufferWidth, height: gl.drawingBufferHeight, uniqueColors: colors.size, error: gl.getError(), renderer: debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER), version: gl.getParameter(gl.VERSION) });
+    resolve({ webgl2: gl instanceof WebGL2RenderingContext, contextLost: gl.isContextLost(), width: gl.drawingBufferWidth, height: gl.drawingBufferHeight, cssWidth: css.width, cssHeight: css.height, viewportWidth: innerWidth, viewportHeight: innerHeight, devicePixelRatio, effectiveRenderScale: metrics.effectiveRenderScale, reportedWidth: metrics.drawingBufferWidth, reportedHeight: metrics.drawingBufferHeight, reportedCssWidth: metrics.renderCssWidth, reportedCssHeight: metrics.renderCssHeight, uniqueColors: colors.size, error: gl.getError(), renderer: debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER), version: gl.getParameter(gl.VERSION) });
   })));
   await testInfo.attach('webgl-evidence', { body: JSON.stringify(evidence, null, 2), contentType: 'application/json' });
   expect(evidence.webgl2).toBe(true);
@@ -32,6 +34,16 @@ async function assertLiveWebGL(page, testInfo) {
   expect(evidence.height).toBeGreaterThan(0);
   expect(evidence.uniqueColors).toBeGreaterThan(10);
   expect(evidence.error).toBe(0);
+  expect(evidence.effectiveRenderScale).toBeGreaterThanOrEqual(.55);
+  expect(evidence.effectiveRenderScale).toBeLessThanOrEqual(Math.min(1.6, evidence.devicePixelRatio));
+  expect(evidence.cssWidth).toBe(evidence.viewportWidth);
+  expect(evidence.cssHeight).toBe(evidence.viewportHeight);
+  expect(evidence.reportedCssWidth).toBe(evidence.viewportWidth);
+  expect(evidence.reportedCssHeight).toBe(evidence.viewportHeight);
+  expect(evidence.reportedWidth).toBe(evidence.width);
+  expect(evidence.reportedHeight).toBe(evidence.height);
+  expect(Math.abs(evidence.width - evidence.viewportWidth*evidence.effectiveRenderScale)).toBeLessThanOrEqual(1);
+  expect(Math.abs(evidence.height - evidence.viewportHeight*evidence.effectiveRenderScale)).toBeLessThanOrEqual(1);
 }
 
 test('real WebGL game: drive, stamp, map, pause, save, reset and touch layout', async ({ page, isMobile }, testInfo) => {
@@ -157,6 +169,18 @@ test('real WebGL game: drive, stamp, map, pause, save, reset and touch layout', 
   expect((await snapshot(page)).player.y).toBe(515);
   await capture(page, testInfo, '07-reset');
   await assertLiveWebGL(page, testInfo);
+  const originalViewport = page.viewportSize();
+  const beforeResize = await snapshot(page);
+  const resized = isMobile ? { width: originalViewport.height, height: originalViewport.width } : { width: 1280, height: 720 };
+  await page.setViewportSize(resized);
+  await expect.poll(async () => (await snapshot(page)).renderCssWidth).toBe(resized.width);
+  await assertLiveWebGL(page, testInfo);
+  await page.setViewportSize(originalViewport);
+  await expect.poll(async () => (await snapshot(page)).renderCssWidth).toBe(originalViewport.width);
+  await assertLiveWebGL(page, testInfo);
+  const afterResize = await snapshot(page);
+  for (const key of ['mode', 'stamps', 'night', 'quest', 'coins']) expect(afterResize[key]).toEqual(beforeResize[key]);
+  await capture(page, testInfo, '08-restored-viewport');
   expect(errors).toEqual([]);
   expect(failedRequests).toEqual([]);
 });
