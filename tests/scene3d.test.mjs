@@ -6,7 +6,7 @@ import { createCity, createScooter, worldToScene, applyVehiclePose, chaseCameraP
 test('3D city contains real mesh geometry and efficient instanced windows',()=>{
  const {city,glass}=createCity(createWorld());let meshes=0,instances=0,vertices=0;
  city.traverse(o=>{if(o.isMesh){meshes++;vertices+=o.geometry.attributes.position.count;if(o.isInstancedMesh)instances+=o.count;}});
- assert.ok(meshes>400);assert.ok(instances>2000);assert.ok(vertices>10000);assert.equal(glass.emissiveIntensity,0);
+ assert.ok(meshes>250&&meshes<420,'Static instancing keeps scene draw calls bounded');assert.ok(instances>6000);assert.ok(vertices>10000);assert.equal(glass.emissiveIntensity,0);
  const bounds=new Box3().setFromObject(city);assert.ok(bounds.max.y>=275,'Tower creates an actual vertical skyline');
 });
 test('3D scooter has volumetric wheels, body, and rider',()=>{

@@ -5,7 +5,7 @@ Validated on 2026-10-01 with Node.js 24.19.0.
 ## Passed
 
 - Clean lockfile install: `npm ci --ignore-scripts`
-- `npm test`: 52 tests passed, 0 failed
+- `npm test`: 56 tests passed, 0 failed
 - `npm run build`: complete static `dist/` output, with bundled Three.js and its MIT license
 - `npm audit --omit=dev`: 0 runtime vulnerabilities reported at validation time; full development-dependency audit also reported 0
 - HTTP smoke test: HTML, JavaScript modules, both Three.js vendor modules, license and favicon returned 200; missing paths returned 404
@@ -34,6 +34,16 @@ Validated on 2026-10-01 with Node.js 24.19.0.
 - DOM integration covers F/E and touch-button mode changes, delivery, reward persistence, retracking and full reset
 - Actual 3D scene-state tests verify mounted-rider visibility, separate walking actor/parked scooter, and transfer/removal of the delivery parcel
 
+## First visual refinement
+
+- Original proportional human figures with articulated arms/legs, shoes and smaller heads; mounted and walking poses retain the existing camera visibility regressions
+- Recognizable scooter shield, footboard, saddle, lights, mirrors, fork, exhaust and plate
+- Authored sidewalk tile texture, segmented curbs and center-line markings
+- Original Traditional Chinese storefront atlas plus batched arcade columns, awnings, glazing and shutters inside existing building footprints
+- Repeated static details are instanced; decorative pedestrians use shared single-mesh geometry/materials
+- Four added geometry/footprint tests bring the local suite to 56 passing tests; gameplay, collision rules and save schema are unchanged
+- Offline geometry images are diagnostic only. This visual revision needs its own live WebGL CI evidence; successful screenshots from earlier commits do not establish its appearance
+
 ## Live browser CI (separate evidence)
 
 Playwright runs against actual Chromium WebGL 2 (SwiftShader software graphics) in desktop, portrait and landscape viewports. It records framebuffer evidence, milestone screenshots and DOM/API traces; the full delivery route uses normal keyboard controls without teleportation or clock modification. An optional, separate reference capture does not determine whether this game's own tests pass.
@@ -55,11 +65,22 @@ Second live checkpoint: [run 36875789810](https://github.com/pc007ya/Taipei_Ride
 - The reference site opened without a CAPTCHA or JavaScript error, but captured only its loading/entry view; a verified bilingual Start button is used by the subsequent capture revision
 - The desktop runner remained in the Ubuntu font download step at this checkpoint. The next revision replaces the 61.2 MB distro font bundle with one 16.4 MB official Noto TC face, pinned by revision and Git blob hash with bounded retries, solely for CI screenshots
 
+Completed live checkpoint: [run 36877239121](https://github.com/pc007ya/Taipei_Ride/actions/runs/36877239121), commit `0a9eed6cb0d5844d9fb0363d65eaeb0d36d846ec`:
+
+- All jobs completed successfully: 52 unit tests/build, portrait, landscape, desktop and the independent reference-capture job
+- Desktop smoke passed at 1440×960 in 2.0 minutes
+- The full original quest passed at 1280×720 in 10.8 minutes using normal keyboard input through the live renderer: acceptance, pickup, continuous road travel, required riding distance, mounted-delivery rejection, dismounting, delivery, exactly one 300-coin reward, reload persistence and full reset
+- Successful desktop screenshots visibly show the parked scooter, walking delivery and the completed reward dialog; no WebGL calls, game clock or gameplay state were stubbed or rewritten
+- The independent reference capture produced a genuine portrait screenshot after Start. Its desktop after-Start screenshot exceeded the 30-second capture budget, so no desktop-reference success is claimed
+- The fixed official Noto font downloaded and matched its pinned integrity hash
+
+These results establish this exact checkpoint. Later renderer or gameplay changes must pass their own CI run before reusing the result as current validation.
+
 ## Verification limits
 
 DOM-flow tests simulate a document with jsdom and stub drawing calls. They are not real-browser end-to-end tests. Offline scene inspection is not a screenshot of the WebGL renderer.
 
-The completed mobile-viewport Chromium results above are real browser rendering, but mobile emulation is not a physical-device test. Desktop completion and the latest map correction require their completed rerun evidence. Hardware GPU performance, physical phone browsers and device-wide compatibility are not established by software-renderer CI or unit tests. The application automatically identifies and uses the separately labeled Canvas 2D compatibility renderer when WebGL initialization fails.
+The completed mobile-viewport Chromium results above are real browser rendering, but mobile emulation is not a physical-device test. Desktop and map-correction completion are established only for the exact successful checkpoint above. Hardware GPU performance, physical phone browsers and device-wide compatibility are not established by software-renderer CI or unit tests. The application automatically identifies and uses the separately labeled Canvas 2D compatibility renderer when WebGL initialization fails.
 
 ## Occlusion investigation and corrections
 

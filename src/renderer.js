@@ -25,18 +25,26 @@ export class Renderer {
     if(o.type==='building') {
       const floors=Math.max(2,Math.floor(o.h/13));
       for(let f=0;f<floors;f++) for(let a=0;a<4;a++) {
-        const z=6+f*12,xx=o.x+6+a*(o.w-9)/4,yy=o.y+6+a*(o.d-9)/4;
+        const z=23+f*12;if(z+7>o.h)continue;const xx=o.x+6+a*(o.w-9)/4,yy=o.y+6+a*(o.d-9)/4;
         const col=this.night?((a+f+Math.round(o.seed*5))%3?'#eed58c':'#3d626c'):'#6e9396';
         this.poly([this.p(xx,o.y+o.d+.1,z),this.p(xx+6,o.y+o.d+.1,z),this.p(xx+6,o.y+o.d+.1,z+7),this.p(xx,o.y+o.d+.1,z+7)],col);
         this.poly([this.p(o.x+o.w+.1,yy,z),this.p(o.x+o.w+.1,yy+6,z),this.p(o.x+o.w+.1,yy+6,z+7),this.p(o.x+o.w+.1,yy,z+7)],mix(col,.86));
       }
       this.box(o.x+8,o.y+8,13,12,9,'#91a4a5',o.h);
       if(o.seed>.6)this.box(o.x+o.w-24,o.y+8,13,10,3,'#dde2d4',o.h);
-      if(o.sign) {
-        this.box(o.x+5,o.y+o.d+1,o.w-10,3,12,o.seed>.8?'#b5483d':'#356f68',4);
-        this.text(o.sign,o.x+o.w/2,o.y+o.d+5,7,'#fff1c4',o.sign.length>3?9:12);
+      // Layered original shop fronts, inset doors and arcade posts.
+      this.box(o.x+3,o.y+o.d-4,o.w-6,3,12,'#527c79',1);
+      this.box(o.x+o.w-4,o.y+3,3,o.d-6,12,'#527c79',1);
+      for(let i=0;i<4;i++){const x=o.x+6+i*(o.w-12)/3,y=o.y+6+i*(o.d-12)/3;
+        this.line([this.p(x,o.y+o.d,1),this.p(x,o.y+o.d,12)],'#c9ceb8',.8);
+        this.line([this.p(o.x+o.w,y,1),this.p(o.x+o.w,y,12)],'#c9ceb8',.8);
       }
-      if(o.seed>.75) {this.box(o.x+o.w-9,o.y+o.d+4,8,3,32,'#e98958',o.h-25);this.text('茶',o.x+o.w-5,o.y+o.d+9,o.h-10,'#fff3d6',11);}
+      for(const x of [o.x+1,o.x+o.w/2,o.x+o.w-3])this.box(x,o.y+o.d-3,2,3,18,'#ddd7bd');
+      this.box(o.x,o.y+o.d-5,o.w,5,1.5,'#d7d1b6',18.5);
+      if(o.seed>.52){this.box(o.x+5,o.y+o.d-2,o.w*.28,1,10,'#89918a',1);for(let h=2;h<11;h+=1.5)this.line([this.p(o.x+5,o.y+o.d,h),this.p(o.x+5+o.w*.28,o.y+o.d,h)],'#626f6a',.5);}
+      this.box(o.x+3,o.y+o.d-1,o.w-6,1,6,'#356f68',12);
+      this.text(o.sign?`小巷${o.sign}`:'日和雜貨',o.x+o.w/2,o.y+o.d+1,14.5,'#fff1c4',7);
+
     }
     if(o.type==='tower') {
       // Bamboo-inspired stepped volumes; geometry is authored here, not imported.
@@ -91,24 +99,28 @@ export class Renderer {
       this.line([point(11,-7,15),point(11,7,15)],'#263b43',2.5);
       this.line([point(11,0,8),point(11,0,16)],'#9be267',3);
       if(!parked){
-      const body=point(-2,0,19),head=point(0,0,30);
-      c.strokeStyle='#ecab5d';c.lineWidth=8*this.scale;c.lineCap='round';c.beginPath();c.moveTo(body.x,body.y);c.lineTo(head.x,head.y+6*this.scale);c.stroke();
-      c.fillStyle='#fcf6cf';c.beginPath();c.arc(head.x,head.y,6*this.scale,0,Math.PI*2);c.fill();
-      c.fillStyle='#384d4e';c.beginPath();c.arc(head.x+2*this.scale,head.y,3*this.scale,-Math.PI/2,Math.PI/2);c.fill();
-      this.line([point(0,0,21),point(11,-6,15)],'#e7ba83',2.5);this.line([point(-5,0,14),point(2,6,8)],'#334a53',3);
+      // Six-head proportions, bent knees and separate upper/lower arms.
+      c.lineCap='round';
+      for(const side of [-1,1]){this.line([point(-4,side*3,14),point(2,side*4,11),point(0,side*4,6)],'#314b57',2.5);quad(-1,side*4-1.3,5,2.6,6,'#223b3b');}
+      this.line([point(-4,0,15),point(-2,0,24)],'#e0a367',7);
+      for(const side of [-1,1]){this.line([point(-2,side*3.5,23),point(2,side*5,20)],'#e0a367',2.3);this.line([point(2,side*5,20),point(11,side*6,16)],'#d8ac84',1.8);}
+      const head=point(-1,0,29);c.fillStyle='#ead6b0';c.beginPath();c.ellipse(head.x,head.y,2.6*this.scale,2.8*this.scale,0,0,Math.PI*2);c.fill();
+      c.fillStyle='#f1eacf';c.beginPath();c.arc(head.x,head.y-1.1*this.scale,2.8*this.scale,Math.PI,Math.PI*2);c.fill();
+      this.line([point(2,0,29),point(2,1.5,28)],'#375456',1.5);
+
       }
       if(this.night)this.poly([point(13,-3,5),point(90,-28),point(90,28),point(13,3,5)],'#e4f0ad22');
       if(!parked&&Math.abs(o.speed)<2) {const p=this.p(o.x,o.y,47);c.fillStyle='#e7ff9c';c.beginPath();c.moveTo(p.x-4,p.y-4);c.lineTo(p.x+4,p.y-4);c.lineTo(p.x,p.y+2);c.fill();}
     }
   }
   walker(o,npc=false){
-    const c=this.ctx,feet=this.p(o.x,o.y,2),body=this.p(o.x,o.y,16),head=this.p(o.x,o.y,29);
-    const step=Math.sin(this.time*9)*Math.min(4,Math.abs(o.speed||0)*.2)*this.scale;
-    this.line([{x:feet.x-3*this.scale,y:feet.y+step},{x:body.x-2*this.scale,y:body.y+4*this.scale}], '#31505a',3);
-    this.line([{x:feet.x+3*this.scale,y:feet.y-step},{x:body.x+2*this.scale,y:body.y+4*this.scale}], '#31505a',3);
-    c.lineCap='round';c.strokeStyle=npc?'#bf9564':'#e7ad69';c.lineWidth=8*this.scale;c.beginPath();c.moveTo(body.x,body.y+4*this.scale);c.lineTo(head.x,head.y+6*this.scale);c.stroke();
-    c.fillStyle='#f4f0cf';c.beginPath();c.arc(head.x,head.y,5*this.scale,0,Math.PI*2);c.fill();
-    if(o.cargo){c.fillStyle='#d9b473';c.fillRect(body.x+4*this.scale,body.y-4*this.scale,8*this.scale,8*this.scale);}
+    const c=this.ctx,a=o.angle??0,cos=Math.cos(a),sin=Math.sin(a),point=(x,y,z=0)=>this.p(o.x+x*cos-y*sin,o.y+x*sin+y*cos,z);
+    const step=Math.sin(this.time*9)*Math.min(2.6,Math.abs(o.speed||0)*.14),shirt=npc?'#bf9564':'#e0a367';c.lineCap='round';
+    for(const side of [-1,1]){const swing=step*side;this.line([point(0,side*2,14),point(swing*.5,side*2,8),point(swing,side*2,2)],'#31505a',2.5);this.line([point(swing-.7,side*2,1.5),point(swing+2,side*2,1.5)],'#223b3b',2.4);}
+    this.line([point(0,0,15),point(0,0,24)],shirt,7);
+    for(const side of [-1,1]){const swing=-step*side;this.line([point(0,side*4,23),point(swing*.5,side*4.3,18.5)],shirt,2.2);this.line([point(swing*.5,side*4.3,18.5),point(swing,side*4.3,14)],'#d8ac84',1.8);}
+    const head=point(0,0,29);c.fillStyle='#d8ac84';c.beginPath();c.ellipse(head.x,head.y,2.5*this.scale,2.8*this.scale,0,0,Math.PI*2);c.fill();c.fillStyle=npc?'#283a36':'#f1eacf';c.beginPath();c.arc(head.x,head.y-.8*this.scale,3*this.scale,Math.PI,Math.PI*2);c.fill();
+    if(o.cargo){const p=point(5,0,19);c.fillStyle='#d9b473';c.fillRect(p.x,p.y,7*this.scale,7*this.scale);}
     if(!npc){const top=this.p(o.x,o.y,43);c.fillStyle='#e8ffa0';c.beginPath();c.moveTo(top.x-4,top.y-4);c.lineTo(top.x+4,top.y-4);c.lineTo(top.x,top.y+2);c.fill();}
   }
   landmark(l,done,selected) {
@@ -125,7 +137,7 @@ export class Renderer {
     this.ground(-170,-120,270,1900,night?'#204a59':'#65a2a7');
     for(let i=0;i<60;i++){const yy=i*32+Math.sin(this.time+i)*3;this.line([this.p(-110,yy),this.p(55,yy-12)],night?'#2f61703b':'#a7d0c34a',1);}
     this.ground(91,70,31,1480,night?'#586b66':'#c6c6a5');
-    for(let ix=0;ix<4;ix++)for(let iy=0;iy<4;iy++)this.ground(ROADS[ix]+35,ROADS[iy]+35,250,250,night?'#59615c':'#c7cbb6');
+    for(let ix=0;ix<4;ix++)for(let iy=0;iy<4;iy++){const x=ROADS[ix]+35,y=ROADS[iy]+35;this.ground(x,y,250,250,night?'#59615c':'#c7cbb6');if(Math.abs(x+125-player.x)<550&&Math.abs(y+125-player.y)<550)for(let t=0;t<=250;t+=10){this.line([this.p(x+t,y),this.p(x+t,y+250)],night?'#465450':'#acb3a6',.45);this.line([this.p(x,y+t),this.p(x+250,y+t)],night?'#465450':'#acb3a6',.45);}for(const edge of [0,250]){this.line([this.p(x+edge,y),this.p(x+edge,y+250)],night?'#859087':'#e2dfca',1.4);this.line([this.p(x,y+edge),this.p(x+250,y+edge)],night?'#859087':'#e2dfca',1.4);}}
     this.ground(1165,1165,225,225,night?'#345a45':'#779a68');
     this.ground(844,844,231,231,night?'#6c7471':'#d4d8c9');
     for(const road of ROADS){this.ground(road-ROAD_WIDTH/2,80,ROAD_WIDTH,1440,night?'#35494e':'#718382');this.ground(80,road-ROAD_WIDTH/2,1440,ROAD_WIDTH,night?'#35494e':'#718382');}
@@ -139,7 +151,8 @@ export class Renderer {
     for(const l of LANDMARKS)if(!(target?.type==='quest'&&distance(l,target)<15))this.landmark(l,stamps.includes(l.id),target?.id===l.id);
     if(target?.type==='quest')this.landmark(target,state.quest?.stage==='completed',true);
     const walking=state.mode==='walking',carrying=state.quest?.stage==='carrying'||state.quest?.stage==='deliver';
-    const items=[...this.world.buildings,...this.world.trees,...this.world.stalls,...traffic,...Object.values(QUEST_STATIONS).map(l=>({x:l.x+29,y:l.y,type:'npc'})),...(walking?[{...state.vehicle,type:'parked-scooter',cargo:false}]:[]),{...player,type:walking?'walker':'player',cargo:carrying}].filter(o=>this.visible(o));
+    const pedestrians=Array.from({length:20},(_,i)=>({x:ROADS[i%5]+45,y:180+(i*91+this.time*(i%2?5:-5)+1300)%1220,angle:i%2?Math.PI/2:-Math.PI/2,speed:5,type:'npc'}));
+    const items=[...pedestrians,...this.world.buildings,...this.world.trees,...this.world.stalls,...traffic,...Object.values(QUEST_STATIONS).map(l=>({x:l.x+29,y:l.y,type:'npc'})),...(walking?[{...state.vehicle,type:'parked-scooter',cargo:false}]:[]),{...player,type:walking?'walker':'player',cargo:carrying}].filter(o=>this.visible(o));
     items.sort((a,b)=>(a.x+a.y+(a.w||0)*.5+(a.d||0)*.5)-(b.x+b.y+(b.w||0)*.5+(b.d||0)*.5));
     for(const o of items) {
       if(o.type==='building'||o.type==='tower'||o.type==='temple'||o.type==='hall'){this.shadow(o);this.drawBuilding(o,player);}
@@ -147,12 +160,6 @@ export class Renderer {
       else if(o.type==='stall')this.drawStall(o);
       else if(o.type==='walker'||o.type==='npc')this.walker(o,o.type==='npc');
       else this.vehicle(o,o.type==='player',o.type==='parked-scooter');
-    }
-    // Tiny pedestrians live on sidewalks; they never enter the driving collision layer.
-    for(let i=0;i<20;i++) {
-      const x=ROADS[i%5]+45,y=180+(i*91+this.time*(i%2?5:-5)+1300)%1220,p=this.p(x,y,8);
-      if(p.x<-20||p.x>w+20||p.y<-20||p.y>h+20)continue;
-      c.fillStyle=['#e9ad73','#bf9392','#679e9a'][i%3];c.fillRect(p.x-2,p.y-3,4,9);c.fillStyle='#ecd1ac';c.beginPath();c.arc(p.x,p.y-5,2.4,0,Math.PI*2);c.fill();
     }
     // Atmospheric vignette keeps the edges quiet without obscuring controls.
     const vignette=c.createRadialGradient(w/2,h/2,h*.15,w/2,h/2,Math.max(w,h)*.66);vignette.addColorStop(0,'#092a2000');vignette.addColorStop(1,night?'#061c285e':'#173d2726');c.fillStyle=vignette;c.fillRect(0,0,w,h);

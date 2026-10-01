@@ -102,6 +102,12 @@ GitHub Actions 會執行一般測試、建置，以及桌機、手機直向與�
 
 本次未取得 `taipei-gta.vercel.app` 的公開原始碼。Taipei Ride 是以城市探索玩法為參考、自行撰寫的獨立版本，**不是原作備份、原始碼匯出或原版還原包**。沒有複製原站程式碼或素材，也不與該網站、作者或任何第三方遊戲品牌有隸屬、合作或贊助關係。地名與地標僅作氛圍靈感，並非官方認證或精確地理重建。
 
+## 第一輪視覺修正
+
+本輪以自行製作的幾何與紋理，調整較自然的人物頭身比例、分肢與鞋子，補上機車前擋板、踏板、後照鏡與燈具辨識細節；街景新增格磚人行道、路緣、雙黃線、店面柱廊／雨遮／卷簾及原創繁中店招。大量重複細節使用批次繪製，沒有匯入參考網站的程式碼、模型、貼圖或招牌。
+
+目前 56 項本地自動測試與建置通過。新畫面仍須查看對應提交的真 WebGL CI 截圖，不把離線示意圖當成實機驗收。參考原作的城市密度、材質寫實度、動作種類、追逐與其他系統仍有明顯差異，本次沒有宣稱同等還原。
+
 ## English
 
 Taipei Ride is an original Taipei-inspired browser exploration game. Ride a scooter, park it and walk, complete a multi-stage tea-delivery quest for a one-time 300 in-game coin reward, or collect six optional landmark stamps. The default renderer uses real Three.js/WebGL 2 geometry and a third-person camera. A clearly labeled Canvas 2D compatibility renderer shares all gameplay and saved progress.
