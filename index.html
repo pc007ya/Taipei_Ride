@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#143b37" />
+  <meta name="description" content="騎上小機車，探索一座台北風格的微型城市。原創 3D 街區、六站集章、日夜漫遊，桌機與手機都能玩。" />
+  <title>台北漫遊 Taipei Ride</title>
+  <link rel="icon" href="./public/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="./src/style.css" />
+</head>
+<body>
+  <canvas id="world" aria-label="台北風格 3D 城市遊戲畫面。使用方向鍵或 WASD 騎乘，E 在地標打卡。"></canvas>
+  <div class="grain" aria-hidden="true"></div>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="台北漫遊首頁"><span class="brand-mark">北</span><span><strong>台北漫遊</strong><small>TAIPEI RIDE</small></span></a>
+    <div class="top-actions"><span id="render-mode" class="mode-pill">3D 漫遊</span><span id="weather" class="weather"><i></i> 午後慢行 <span>24°</span></span><button id="atmosphere" class="icon-btn" title="切換日夜 (N)" aria-label="切換日夜">◐</button><button id="help" class="icon-btn" title="操作說明" aria-label="操作說明">?</button><button id="pause" class="icon-btn" title="暫停 (P)" aria-label="暫停">Ⅱ</button></div>
+  </header>
+  <main>
+    <section class="mission glass" aria-label="目前目的地">
+      <div class="eyebrow"><span class="route-dot"></span> 今天，去哪裡？ <span id="mission-index">01 / 06</span></div>
+      <div class="mission-title"><h1 id="destination">巷口夜市</h1><span id="distance">105 m</span></div>
+      <p id="clue">讓一份熱騰騰的街邊小吃，開啟今天的漫遊。</p>
+      <div class="mission-bottom"><span id="direction">往北騎</span><button id="open-map">查看路線 <span>↗</span></button></div>
+    </section>
+    <div class="passport-label"><span>城市收藏</span><strong id="stamp-count">0 / 6</strong></div>
+    <div id="stamp-rail" class="stamp-rail" aria-label="旅程集章"></div>
+    <div class="ride-hint" id="ride-hint"><span>W / ↑</span> 出發 &nbsp; <span>A D / ← →</span> 轉向</div>
+    <button id="interact" class="interact" hidden>◎ 拍照打卡 <kbd>E</kbd></button>
+    <section class="speed-panel" aria-label="騎乘儀表"><div class="speed-top"><span class="status-dot"></span><span id="ride-state">準備出發</span></div><div class="speed-value"><strong id="speed">00</strong><span>km/h</span></div><div class="distance-total"><span id="trip-distance">0.00</span> km <span class="divider">/</span> 把日常，騎成風景</div></section>
+    <button id="minimap-button" class="minimap-panel" aria-label="開啟城市地圖"><div class="map-title"><span>TAIPEI / 城市地圖</span><span>↗</span></div><canvas id="minimap" aria-hidden="true"></canvas><span class="map-foot">N ↑ <span id="map-district">城市中心</span></span></button>
+    <div id="storage-notice" class="storage-notice" role="status" hidden>進度無法儲存，重新整理後將重置</div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <div class="touch-controls" aria-label="觸控騎乘控制">
+      <div class="steering"><button data-control="left" aria-label="左轉">◀</button><button data-control="right" aria-label="右轉">▶</button></div>
+      <div class="pedals"><button data-control="reverse" class="reverse" aria-label="倒車">倒車</button><button data-control="brake" class="brake" aria-label="煞車">煞車</button><button data-control="throttle" class="throttle" aria-label="油門">油門<span>↑</span></button></div>
+    </div>
+  </main>
+  <section id="welcome" class="welcome glass" aria-label="開始旅程">
+    <span class="eyebrow">A SMALL CITY. YOUR OWN PACE.</span><h2>轉個彎，<br>遇見台北。</h2><p>一台機車，六個城市印記。<br>不趕時間，沿著街角慢慢探索。</p><button id="start" class="primary">開始漫遊 <span>↗</span></button><div class="welcome-note">原創微型城市 · 免登入 · 自動儲存集章</div>
+  </section>
+  <dialog id="map-dialog" class="dialog map-dialog"><div class="dialog-heading"><div><span class="eyebrow">YOUR CITY, YOUR ROUTE</span><h2>選一站，慢慢騎</h2></div><button class="close" data-close aria-label="關閉地圖">×</button></div><div class="map-layout"><canvas id="large-map" aria-label="地標與目前位置"></canvas><div><div id="map-destinations" class="map-destinations"></div><p class="fineprint">這是台北風格的想像街區，地標位置並非真實導航地圖。</p></div></div></dialog>
+  <dialog id="help-dialog" class="dialog"><div class="dialog-heading"><div><span class="eyebrow">TAKE IT EASY</span><h2>你的城市騎乘指南</h2></div><button class="close" data-close aria-label="關閉說明">×</button></div><div class="controls-list"><div><kbd>W ↑</kbd><span>油門，向前騎</span></div><div><kbd>S ↓</kbd><span>減速，再倒車</span></div><div><kbd>A D ← →</kbd><span>向左 / 向右轉向</span></div><div><kbd>Space</kbd><span>煞車</span></div><div><kbd>E</kbd><span>靠近地標、慢下來後打卡</span></div><div><kbd>P / Esc</kbd><span>暫停 / 繼續</span></div><div><kbd>M / N</kbd><span>城市地圖 / 切換日夜</span></div><div><kbd>R</kbd><span>回到起點，保留集章</span></div></div><p class="help-note">手機可使用畫面下方按鈕。跟著發光圓環找地標，速度降到 13 km/h 以下時就能打卡。碰撞只會減速，不會遺失進度。</p><button id="help-done" class="primary">知道了，出發</button></dialog>
+  <dialog id="pause-dialog" class="dialog small-dialog"><span class="eyebrow">A LITTLE BREAK</span><h2>休息一下，也很好。</h2><p>城市會在這裡等你。</p><button id="resume" class="primary">繼續漫遊</button><button id="reset-bike" class="secondary">機車回到起點</button><button id="reset-trip" class="text-button">重新開始集章旅程</button></dialog>
+  <dialog id="stamp-dialog" class="dialog stamp-dialog"><button class="close" data-close aria-label="繼續騎乘">×</button><div id="big-stamp" class="big-stamp">味</div><span class="eyebrow" id="stamp-caption">CITY MEMORY / 01</span><h2 id="stamp-title">巷口夜市，已收藏</h2><p id="stamp-description"></p><div id="collected-count" class="collected-count">1 / 6 城市印記</div><button id="next-stop" class="primary">下一站，繼續探索 <span>↗</span></button></dialog>
+  <dialog id="reset-dialog" class="dialog small-dialog"><h2>重新開始這趟旅程？</h2><p>這會清除這個瀏覽器的集章與里程，無法復原。</p><button id="cancel-reset" class="primary">保留旅程</button><button id="confirm-reset" class="secondary">確定重新開始</button></dialog>
+  <noscript>請開啟 JavaScript，才能開始台北漫遊。</noscript>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
