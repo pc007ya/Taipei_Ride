@@ -1,13 +1,15 @@
-import { LANDMARKS, START, createWorld, updatePlayer, updateWalker, syncVehicle, changeTravelMode, makeTraffic, updateTraffic, nearbyLandmark, canCollect, distance } from './world.js';
+import { LANDMARKS, START, createWorld, stepSimulation, syncVehicle, changeTravelMode, makeTraffic, updateTraffic, nearbyLandmark, canCollect, distance } from './world.js';
 import { SAVE_KEY, LEGACY_SAVE_KEY, createSession, serializeSession, QUEST_STATIONS, questObjective, questInteraction, interactQuest, recordQuestRide } from './session.js';
 import { Renderer, drawMap } from './renderer.js';
+import { toMetres, toKmh } from './scale.js';
+import { createFrontEnd } from './front-end.js';
 const $=id=>document.getElementById(id);
 let saveAvailable=true,storageWarningShown=false,saved=null;
 try{const current=localStorage.getItem(SAVE_KEY),raw=current===null?localStorage.getItem(LEGACY_SAVE_KEY):current;try{saved=raw===null?null:JSON.parse(raw);}catch{saved=null;}}catch{saveAvailable=false;}
 const world=createWorld(),state=createSession(world,saved),player=state.player,traffic=makeTraffic();state.traffic=traffic;state.target=LANDMARKS.find(l=>l.id===state.selectedLandmark)||null;
 let started=false,paused=false,lastTime=0,uiClock=0,saveClock=0,toastTimer=0,movingTime=0,completionKind='stamp';
 const input={throttle:false,reverse:false,left:false,right:false,brake:false},heldKeys=new Set(),touch=new Set();
-let renderer,renderMode='3d';
+let renderer,renderMode='3d',physicsSnapshot={hit:false,buildingHit:false,vehicleHit:false,movedDistance:0};
 const destination=()=>state.activity==='quest'?questObjective(state):state.target;
 const renderState=()=>({...state,target:destination()});
 async function initializeRenderer(){
@@ -71,7 +73,7 @@ function interact(){
  save();renderMission();
  if(result.completed){completionKind='quest';$('big-stamp').textContent='茶';$('stamp-caption').textContent='A CUP AFTER THE RAIN';$('stamp-title').textContent='熱茶送達，心意也到了';$('stamp-description').textContent='修傘師傅接過熱茶，笑著向你道謝。城市裡的小小幫忙，也是一段值得收藏的風景。';$('collected-count').textContent=`+300 遊戲幣 · 餘額 ${state.coins}`;$('next-stop').innerHTML='去收集城市印記 <span>↗</span>';modal('stamp-dialog');}
 }
-$('start').onclick=()=>{started=true;$('welcome').hidden=true;document.body.classList.add('playing');clearInput();toast(state.activity==='quest'?'W / ↑ 前進，F 上下車；到阿沐茶舖按 E 接委託':'旅程已恢復，W / ↑ 前進，F 可上下車');};
+function startJourney(){started=true;$('welcome').hidden=true;document.body.classList.add('playing');renderer.setIntroProgress?.(null);resetCamera();clearInput();toast('按住 W 或油門出發，跟著路口的金色圓環');}
 $('pause').onclick=pause;$('resume').onclick=closeModal;$('help').onclick=()=>modal('help-dialog');$('help-done').onclick=()=>{closeModal();if(!started)$('start').click();};
 $('atmosphere').onclick=setNight;$('open-map').onclick=openMap;$('minimap-button').onclick=openMap;$('interact').onclick=interact;$('vehicle-action').onclick=toggleVehicle;
 $('track-quest').onclick=()=>{state.activity='quest';renderMission();renderStamps();save();closeModal();};
@@ -87,28 +89,26 @@ for(const b of document.querySelectorAll('[data-control]')){const name=b.dataset
 window.addEventListener('blur',()=>{clearInput();if(started&&!paused)modal('pause-dialog');save();});document.addEventListener('visibilitychange',()=>{if(document.hidden){clearInput();if(started&&!paused)modal('pause-dialog');save();}});window.addEventListener('pagehide',save);
 window.addEventListener('resize',()=>{renderer.resize();if($('map-dialog').open)drawMap($('large-map'),renderState(),true);});
 function ui(){
- const l=destination(),near=nearbyLandmark(player),walking=state.mode==='walking',kmh=Math.round(Math.abs(player.speed)*(walking?.35:1.6));
- $('speed').textContent=String(kmh).padStart(2,'0');$('trip-distance').textContent=(player.distance/1000).toFixed(2);$('cargo-status').hidden=!['carrying','deliver'].includes(state.quest.stage);$('coin-count').textContent=String(state.coins);$('travel-mode').textContent=walking?'步行探索':'機車漫遊';$('ride-state').textContent=walking?(kmh?'街角散步':'步行停留'):player.speed<-.5?'慢慢倒車':kmh>0?'城市慢行':'準備出發';
- if(l){const d=distance(player,l);$('distance').textContent=d<1000?`${Math.round(d)} m`:`${(d/1000).toFixed(1)} km`;const dx=l.x-player.x,dy=l.y-player.y;let dir='';if(Math.abs(dy)>Math.abs(dx)*.4)dir+=dy<0?'北':'南';if(Math.abs(dx)>Math.abs(dy)*.4)dir+=dx<0?'西':'東';$('direction').textContent=d<42?'已到附近，按 E 互動':`往${dir}${walking?'走':'騎'} · 跟著圓環`;}else{$('distance').textContent='隨心';$('direction').textContent=state.activity==='quest'?'主線完成 · 收藏支線等你探索':'六站完成 · 城市屬於你';}
+ const l=destination(),near=nearbyLandmark(player),walking=state.mode==='walking',kmh=Math.round(toKmh(Math.abs(player.actualSpeed??player.speed)));
+ $('speed').textContent=String(kmh).padStart(2,'0');$('trip-distance').textContent=(toMetres(player.distance)/1000).toFixed(2);$('cargo-status').hidden=!['carrying','deliver'].includes(state.quest.stage);$('coin-count').textContent=String(state.coins);$('travel-mode').textContent=walking?'步行探索':'機車漫遊';$('ride-state').textContent=walking?(kmh?'街角散步':'步行停留'):player.speed<-.5?'慢慢倒車':kmh>0?'城市慢行':'準備出發';
+ if(l){const d=distance(player,l);$('distance').textContent=toMetres(d)<1000?`${Math.round(toMetres(d))} m`:`${(toMetres(d)/1000).toFixed(1)} km`;const dx=l.x-player.x,dy=l.y-player.y;let dir='';if(Math.abs(dy)>Math.abs(dx)*.4)dir+=dy<0?'北':'南';if(Math.abs(dx)>Math.abs(dy)*.4)dir+=dx<0?'西':'東';$('direction').textContent=d<42?'已到附近，按 E 互動':`往${dir}${walking?'走':'騎'} · 跟著圓環`;}else{$('distance').textContent='隨心';$('direction').textContent=state.activity==='quest'?'主線完成 · 收藏支線等你探索':'六站完成 · 城市屬於你';}
  if(state.activity==='quest'&&state.quest.stage==='carrying')$('clue').textContent=l.clue;
  const action=state.activity==='quest'?questInteraction(state):null,showQuest=started&&!paused&&action,showStamp=started&&!paused&&state.activity==='explore'&&near&&!state.stamps.includes(near.id);
  $('interact').hidden=!showQuest&&!showStamp;
  if(showQuest){$('interact').disabled=!action.enabled;$('interact').innerHTML=`${action.label} <kbd>E</kbd>`;}else if(showStamp){$('interact').disabled=!canCollect(player,near);$('interact').innerHTML=canCollect(player,near)?'◎ 拍照打卡 <kbd>E</kbd>':'先慢下來，再打卡';}
- $('vehicle-action').hidden=!started||paused;const away=distance(player,state.vehicle);$('vehicle-action').innerHTML=walking?(away<34?'上車 <kbd>F</kbd>':`機車在 ${Math.ceil(away)} m 外 <kbd>F</kbd>`):'下車散步 <kbd>F</kbd>';
+ $('vehicle-action').hidden=!started||paused;const away=distance(player,state.vehicle);$('vehicle-action').innerHTML=walking?(away<34?'上車 <kbd>F</kbd>':`機車在 ${Math.ceil(toMetres(away))} m 外 <kbd>F</kbd>`):'下車散步 <kbd>F</kbd>';
  $('map-district').textContent=player.x<400?'老城與河岸':player.x>1150?'山城之間':'城市中心';drawMap($('minimap'),renderState());if($('map-dialog').open)drawMap($('large-map'),renderState(),true);
 }
 function frame(ms){
  const dt=Math.min(.04,lastTime?(ms-lastTime)/1000:1/60);lastTime=ms;
  if(started&&!paused){
-  const before=player.distance,hit=state.mode==='riding'?updatePlayer(player,input,dt,world):updateWalker(player,input,dt,world,state.vehicle);
-  if(state.mode==='riding')syncVehicle(player,state.vehicle);
+  const before=player.distance,result=stepSimulation(state,input,dt,world,traffic),hit=result.hit;physicsSnapshot={...result};
   if(recordQuestRide(state.quest,player.distance-before,state.mode)){renderMission();save();toast('配送路程已完成，到了修傘攤請下車交付');}
-  if(hit&&player.collisionCooldown<=0){player.collisionCooldown=1.5;toast('前方受阻，轉個方向，或按 R 將人車移回起點');}
-  updateTraffic(traffic,dt);
-  if(state.mode==='riding'&&player.collisionCooldown<=0&&Math.abs(player.speed)>10&&traffic.some(c=>distance(c,player)<19)){player.speed*=-.2;syncVehicle(player,state.vehicle);player.collisionCooldown=1.8;toast('讓一讓，慢慢騎也很好');}
+  if(hit&&player.collisionCooldown<=0){player.collisionCooldown=1.5;toast(result.vehicleHit?'前方有車，停下讓一讓或沿旁邊慢行':'前方受阻，轉個方向，或按 R 將人車移回起點');}
   if(Math.abs(player.speed)>2)movingTime+=dt;if(movingTime>4)$('ride-hint').style.opacity='0';saveClock+=dt;if(saveClock>5){saveClock=0;save();}
- }else if(!started)updateTraffic(traffic,dt*.6);
+ }else if(!started)updateTraffic(traffic,dt*.6,world,state);
  renderer.render(renderState(),paused?0:dt);uiClock+=dt;if(uiClock>.1){uiClock=0;ui();}requestAnimationFrame(frame);
 }
-updateTraffic(traffic,0);renderStamps();renderMission();refreshAtmosphere();updateStorageNotice();ui();requestAnimationFrame(frame);
-Object.defineProperty(window,'taipeiRide',{value:Object.freeze({snapshot:()=>({started,paused,player:{...player},vehicle:{...state.vehicle},mode:state.mode,quest:{...state.quest},coins:state.coins,activity:state.activity,objective:destination()?{...destination()}:null,stamps:[...state.stamps],night:state.night,target:state.target?.id||null,renderMode,storageAvailable:saveAvailable,...(renderer.getRenderMetrics?.()||{effectiveRenderScale:null,drawingBufferWidth:null,drawingBufferHeight:null,renderCssWidth:null,renderCssHeight:null})})}),writable:false});
+const frontEnd=createFrontEnd({getRenderer:()=>renderer,onStart:startJourney,onReturn:()=>{save();started=false;document.body.classList.remove('playing');clearInput();},openDialog:modal,closeDialog:closeModal,isPlaying:()=>started,getNight:()=>state.night,getAudioState:()=>({paused,speed:player.actualSpeed??player.speed,walking:state.mode==='walking'}),setNight,getRenderMode:()=>renderMode,notify:toast});
+updateTraffic(traffic,0,world,state);renderStamps();renderMission();refreshAtmosphere();updateStorageNotice();ui();requestAnimationFrame(frame);
+Object.defineProperty(window,'taipeiRide',{value:Object.freeze({snapshot:()=>({started,paused,menu:frontEnd.snapshot(),traffic:traffic.map(car=>({...car})),physics:{...physicsSnapshot},player:{...player},vehicle:{...state.vehicle},mode:state.mode,quest:{...state.quest},coins:state.coins,activity:state.activity,objective:destination()?{...destination()}:null,stamps:[...state.stamps],night:state.night,target:state.target?.id||null,renderMode,storageAvailable:saveAvailable,...(renderer.getRenderMetrics?.()||{effectiveRenderScale:null,drawingBufferWidth:null,drawingBufferHeight:null,renderCssWidth:null,renderCssHeight:null})})}),writable:false});

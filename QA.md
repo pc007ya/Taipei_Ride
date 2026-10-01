@@ -2,7 +2,32 @@
 
 Validated on 2026-10-01 with Node.js 24.19.0.
 
-## Passed
+## Current refinement: evidence required for its own commit
+
+This revision replaces the actor/vehicle geometry and collision system, changes building scale, and adds the intro/menu presentation. Earlier successful runs below are historical baselines, not evidence that this revision passed. Check the exact commit's completed `Test and build` run before treating the current version as validated.
+
+Local final-tree checks on 2026-10-01: **133 tests passed, 0 failed**, `npm run build` passed, and changed JavaScript syntax plus `git diff --check` passed. This count includes the scaled geometry/contact, collision, intro, menu and synthesized-audio regressions. It does not count the newly added live browser tests as passed.
+
+The live suite now separates the long continuous delivery journey from the desktop/portrait/landscape jobs. It keeps normal keyboard input, the full delivery route and the existing route budgets. The desktop suite additionally checks:
+
+- Actual application-loop contact against production buildings in riding and walking modes, sustained stopped position under throttle, and reversing away
+- A normal saved actor starting pose with the unchanged, deterministic production traffic: allow a car to stop before approaching it, or approach while it moves; record both oriented footprints, speeds and displacement, and reject overlap
+- Oblique scooter/building contact that retains motion along the wall without moving through its normal boundary
+- Real WebGL framebuffer evidence and screenshots at contact, plus normal gameplay street views
+- A separately labelled model inspection camera using the production Three.js mesh factories: both rider poses, character geometry, shared person/vehicle/shop-entrance scale, trees and lamps. These images are not passed off as the normal gameplay camera
+- Real browser menu interruption, replay/skip, settings, help, both implemented characters, return without journey loss, persistence, native range-keyboard volume input and actual drawing-buffer dimensions after changing quality
+
+Collision fixtures use the normal v2 save loader only to establish a reproducible starting pose. They do not replace physics, traffic generation, browser timing, WebGL calls or input handlers. The independent continuous quest does not inject a saved pose or teleport. Unit tests cover the wider stationary/moving, head-on/rear-end/crossing, glancing, corner, parked-vehicle, tree and lamp collision matrix.
+
+Traffic lane centres now sit at one quarter of the seven-metre road width (17.5 world units). This leaves 2.7 units between a centreline scooter's occupied footprint and an adjacent car's mirrors. Tests cover four cardinal headings, same/opposite-direction passage and three turn-entry phases without reducing either collider. Trees and lamp bases are solid, non-destructible obstacles in this implementation; that is not a claim about untested destruction behavior in the reference game.
+
+Native Chromium in the editing environment cannot start because its process socket is not permitted. GitHub Actions runs the official Chromium build with actual WebGL 2 through SwiftShader. New browser tests being present or discovered is not a passing result; mobile viewport emulation does not establish physical-phone or hardware-GPU behavior.
+
+## Previous baseline: commit df30b3f
+
+[Run 36885386269](https://github.com/pc007ya/Taipei_Ride/actions/runs/36885386269) completed successfully for commit `df30b3fae0e471c3553bef0ef93f7e788ae2336d`: 62 tests/build, three live WebGL viewport flows, and the complete normal-keyboard delivery journey. Desktop smoke took 2.3 minutes at 1440×960; delivery took 12.4 minutes at 1280×720. The actual drawing buffer adapted to scale 0.55 while CSS/UI dimensions remained unchanged. Reward, persistence and reset passed. This baseline predates the model, scale, collision and menu changes described above.
+
+## Earlier passed local checks
 
 - Clean lockfile install: `npm ci --ignore-scripts`
 - `npm test`: 62 tests passed, 0 failed

@@ -52,7 +52,7 @@ test('boarding requires proximity and a clear path; no through-wall boarding',()
  const blockedWorld={obstacles:[{x:800,y:495,w:4,d:30}]},blocked={mode:'walking',player:{x:790,y:510,angle:0,speed:0},vehicle:{x:820,y:510,angle:0,speed:0}};assert.equal(changeTravelMode(blocked,blockedWorld).ok,false);assert.equal(blocked.mode,'walking');
 });
 test('dismount cannot jump across a wall to an apparently clear target',()=>{
- const sealed={obstacles:[{x:790,y:488,w:25,d:4},{x:790,y:518,w:25,d:4},{x:784,y:488,w:4,d:35},{x:817,y:488,w:4,d:35}]};assert.equal(findDismountPosition({x:800,y:505,angle:0},sealed),null);
+ const sealed={obstacles:[{x:784,y:495,w:32,d:4},{x:784,y:511,w:32,d:4},{x:784,y:495,w:4,d:20},{x:812,y:495,w:4,d:20}]};assert.equal(findDismountPosition({x:800,y:505,angle:0},sealed),null);
 });
 test('fresh reset state clears mission, currency, modes and both positions together',()=>{
  const fresh=createSession(world);assert.equal(fresh.quest.stage,'available');assert.equal(fresh.coins,0);assert.deepEqual(fresh.stamps,[]);assert.equal(fresh.player.distance,0);assert.equal(fresh.mode,'riding');assert.deepEqual([fresh.player.x,fresh.player.y,fresh.vehicle.x,fresh.vehicle.y],[START.x,START.y,START.x,START.y]);

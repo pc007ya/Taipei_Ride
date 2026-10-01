@@ -27,7 +27,7 @@ test('stationary steering does not pivot scooter',()=>{
 });
 test('building collision and outer boundary block movement',()=>{
  const b=world.obstacles[0];assert.ok(collides(b.x+5,b.y+5,world.obstacles));assert.ok(collides(30,800,[]));
- const p={x:92,y:800,speed:-50,angle:0,distance:0,collisionCooldown:0};updatePlayer(p,{},.04,world);assert.equal(p.x,92);assert.ok(p.speed>0);
+ const p={x:92,y:800,speed:-50,angle:0,distance:0,collisionCooldown:0};updatePlayer(p,{},.04,world);assert.ok(p.x>=103);assert.equal(p.speed,0);
 });
 test('delta is capped to avoid large movement after a stalled frame',()=>{
  const p=createPlayer(),before={...p};p.speed=100;updatePlayer(p,{throttle:true},1000,world);assert.ok(distance(p,before)<6);

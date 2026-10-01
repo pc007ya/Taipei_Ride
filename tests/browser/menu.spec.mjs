@@ -1,0 +1,139 @@
+import { test, expect } from '@playwright/test';
+
+const snapshot = page => page.evaluate(() => window.taipeiRide.snapshot());
+const position = state => ({ x: state.player.x, y: state.player.y, angle: state.player.angle });
+
+test('live WebGL introduction and menu: interruption, settings, help and return', async ({ page }, testInfo) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
+  async function capture(name) {
+    await testInfo.attach(`${name}-state`, { body: JSON.stringify(await snapshot(page), null, 2), contentType: 'application/json' });
+    const path = testInfo.outputPath(`${name}.png`);
+    await page.screenshot({ path, fullPage: true });
+    await testInfo.attach(name, { path, contentType: 'image/png' });
+  }
+  // The OS accessibility preference is a real browser input, not a changed
+  // animation clock. Explicit replay/skip is exercised below with motion on.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await page.waitForFunction(() => window.taipeiRide?.snapshot().menu);
+  await expect.poll(async () => (await snapshot(page)).menu.phase).toBe('menu');
+  expect((await snapshot(page)).renderMode).toBe('3d');
+  expect((await snapshot(page)).menu.reducedMotion).toBe(true);
+  const initial = await snapshot(page);
+  for (const id of ['start', 'menu-character', 'menu-settings', 'menu-controls', 'menu-about']) {
+    const control = page.locator(`#${id}`);
+    await expect(control).toBeVisible();
+    const bounds = await control.boundingBox(), viewport = page.viewportSize();
+    expect(bounds.x).toBeGreaterThanOrEqual(0);
+    expect(bounds.y).toBeGreaterThanOrEqual(0);
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width + 1);
+    expect(bounds.y + bounds.height).toBeLessThanOrEqual(viewport.height + 1);
+  }
+  await capture('menu-01-main');
+  await page.locator('#menu-controls').click();
+  await expect(page.locator('#help-dialog')).toBeVisible();
+  await page.locator('#help-done').click();
+  await expect(page.locator('#help-dialog')).not.toBeVisible();
+  expect((await snapshot(page)).menu.phase).toBe('menu');
+  expect((await snapshot(page)).started).toBe(false);
+
+  await page.locator('#menu-character').click();
+  await expect(page.locator('#character-dialog')).toBeVisible();
+  await page.locator('[data-appearance="river"]').click();
+  await expect(page.locator('[data-appearance="river"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(async () => (await snapshot(page)).menu.appearance).toBe('river');
+  await capture('menu-02-character');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#character-dialog')).not.toBeVisible();
+  expect(position(await snapshot(page))).toEqual(position(initial));
+
+  await page.locator('#menu-language').click();
+  await expect.poll(async () => (await snapshot(page)).menu.language).toBe('en');
+  await page.locator('#menu-settings').click();
+  await expect(page.locator('#setting-language')).toHaveValue('en');
+  await page.locator('#setting-effects').focus();
+  await page.keyboard.press('Home');
+  await page.keyboard.press('ArrowRight');
+  await page.locator('#setting-music').focus();
+  await page.keyboard.press('End');
+  await page.locator('#setting-master').focus();
+  await page.keyboard.press('Home');
+  await expect.poll(async () => (await snapshot(page)).menu.audio).toMatchObject({ master: 0, music: 1, effects: .01, available: true, activated: true, running: true });
+  await page.locator('#setting-quality').selectOption('low');
+  await expect.poll(async () => (await snapshot(page)).effectiveRenderScale).toBeLessThanOrEqual(.75);
+  const low = await page.evaluate(() => {
+    const gl = document.querySelector('#world').getContext('webgl2');
+    return { ...window.taipeiRide.snapshot(), actualBuffer: [gl.drawingBufferWidth, gl.drawingBufferHeight], css: [innerWidth, innerHeight] };
+  });
+  expect(low.menu.quality).toBe('low');
+  expect(low.renderMode).toBe('3d');
+  expect(low.actualBuffer).toEqual([low.drawingBufferWidth, low.drawingBufferHeight]);
+  expect(low.css).toEqual([low.renderCssWidth, low.renderCssHeight]);
+  await testInfo.attach('menu-low-quality-evidence', { body: JSON.stringify(low, null, 2), contentType: 'application/json' });
+  await page.locator('#setting-quality').selectOption('high');
+  await expect.poll(async () => (await snapshot(page)).menu.quality).toBe('high');
+  await page.locator('#setting-quality').selectOption('medium');
+  await expect.poll(async () => (await snapshot(page)).menu.quality).toBe('medium');
+  expect((await snapshot(page)).effectiveRenderScale).toBeLessThanOrEqual(1.2);
+  await page.locator('#setting-night').check();
+  await expect.poll(async () => (await snapshot(page)).night).toBe(true);
+  await page.locator('#setting-language').selectOption('zh');
+  await page.locator('#setting-motion').uncheck();
+  await capture('menu-03-settings');
+  await page.locator('#replay-intro').click();
+  await expect(page.locator('#skip-intro')).toBeVisible();
+  await capture('menu-04-intro-transition');
+  await expect.poll(async () => (await snapshot(page)).menu.phase).toBe('menu');
+  await page.locator('#menu-settings').click();
+  await page.locator('#replay-intro').click();
+  await expect(page.locator('#skip-intro')).toBeVisible();
+  await page.locator('#skip-intro').click();
+  await expect.poll(async () => (await snapshot(page)).menu.phase).toBe('menu');
+  expect((await snapshot(page)).started).toBe(false);
+  expect(position(await snapshot(page))).toEqual(position(initial));
+
+  await page.locator('#menu-about').click();
+  await expect(page.locator('#about-dialog')).toBeVisible();
+  await page.locator('#about-dialog .front-back').click();
+  await expect(page.locator('#about-dialog')).not.toBeVisible();
+  await page.locator('#start').click();
+  await expect.poll(async () => (await snapshot(page)).menu.phase).toBe('playing');
+  await page.keyboard.down('w');
+  await expect.poll(async () => (await snapshot(page)).player.distance).toBeGreaterThan(1);
+  await page.keyboard.up('w');
+  await page.keyboard.press('p');
+  await expect(page.locator('#pause-dialog')).toBeVisible();
+  await page.locator('#pause-settings').click();
+  await expect(page.locator('#settings-dialog')).toBeVisible();
+  await page.locator('#setting-motion').check();
+  await page.locator('#settings-dialog .front-back').click();
+  await expect(page.locator('#pause-dialog')).toBeVisible();
+  const paused = await snapshot(page);
+  await page.locator('#return-menu').click();
+  await expect.poll(async () => (await snapshot(page)).menu.phase).toBe('menu');
+  const returned = await snapshot(page);
+  expect(position(returned)).toEqual(position(paused));
+  for (const key of ['quest', 'coins', 'stamps', 'mode']) expect(returned[key]).toEqual(paused[key]);
+  for (const key of ['x', 'y', 'angle']) expect(returned.vehicle[key]).toBe(paused.vehicle[key]);
+  await page.keyboard.down('w');
+  await page.waitForTimeout(500);
+  await page.keyboard.up('w');
+  expect(position(await snapshot(page))).toEqual(position(returned));
+  await capture('menu-05-return-preserves-journey');
+  await page.reload();
+  await page.waitForFunction(() => window.taipeiRide?.snapshot().menu);
+  await expect.poll(async () => (await snapshot(page)).menu.phase).toBe('menu');
+  expect((await snapshot(page)).menu.reducedMotion).toBe(true);
+  expect((await snapshot(page)).menu.language).toBe('zh');
+  expect((await snapshot(page)).menu.appearance).toBe('river');
+  expect((await snapshot(page)).menu.quality).toBe('medium');
+  expect((await snapshot(page)).menu.audio).toMatchObject({ master: 0, music: 1, effects: .01 });
+  expect((await snapshot(page)).night).toBe(true);
+  expect(position(await snapshot(page))).toEqual(position(returned));
+  await page.locator('#start').click();
+  await expect.poll(async () => (await snapshot(page)).menu.phase).toBe('playing');
+  expect((await snapshot(page)).renderMode).toBe('3d');
+  expect(errors).toEqual([]);
+});

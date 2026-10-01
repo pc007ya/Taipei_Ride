@@ -40,7 +40,7 @@ jobs:
       - name: Install Traditional Chinese screenshot fonts
         run: node tests/browser/install-ci-font.mjs
       - name: Run live WebGL browser tests
-        run: npm run test:browser -- --project=${{ matrix.project }}
+        run: npm run test:browser -- --project=${{ matrix.project }} --grep-invert "complete original delivery quest"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -53,6 +53,37 @@ jobs:
         if: always()
         with:
           name: taipei-ride-screenshots-${{ matrix.project }}
+          path: test-results/**/*.png
+          retention-days: 14
+  journey:
+    name: Continuous WebGL delivery journey
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Install official Chromium and runtime dependencies
+        run: npx playwright install --with-deps chromium
+      - name: Install Traditional Chinese screenshot fonts
+        run: node tests/browser/install-ci-font.mjs
+      - name: Run the unchanged continuous route with normal controls
+        run: npm run test:browser -- --project=desktop tests/browser/quest.spec.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: taipei-ride-webgl-journey
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: taipei-ride-screenshots-journey
           path: test-results/**/*.png
           retention-days: 14
   reference:

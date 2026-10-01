@@ -1,4 +1,4 @@
-import { START, LANDMARKS, createPlayer, cleanProgress, collides, distance, clamp, findDismountPosition } from './world.js';
+import { START, LANDMARKS, createPlayer, cleanProgress, poseCollides, collisionBody, bodiesOverlap, toMetres, distance, clamp, findDismountPosition } from './world.js';
 export const SAVE_KEY = 'taipei-ride:v2';
 export const LEGACY_SAVE_KEY = 'taipei-ride:v1';
 export const QUEST_REWARD = 300;
@@ -11,9 +11,10 @@ export const QUEST_STATIONS = {
 const stages=['available','pickup','carrying','deliver','completed'];
 const finite=(n,fallback=0)=>typeof n==='number'&&Number.isFinite(n)?n:fallback;
 const heading=n=>{n=finite(n,START.angle);return Math.atan2(Math.sin(n),Math.cos(n));};
-function safePose(raw,world,radius){
- if(!raw||typeof raw!=='object'||!Number.isFinite(raw.x)||!Number.isFinite(raw.y)||collides(raw.x,raw.y,world.obstacles,radius))return {...START};
- return {x:raw.x,y:raw.y,angle:heading(raw.angle)};
+function safePose(raw,world,kind){
+ if(!raw||typeof raw!=='object'||!Number.isFinite(raw.x)||!Number.isFinite(raw.y))return {...START};
+ const pose={x:raw.x,y:raw.y,angle:heading(raw.angle)};
+ return poseCollides(pose,kind,world)?{...START}:pose;
 }
 function cleanQuest(raw){
  let stage=stages.includes(raw?.stage)?raw.stage:'available';
@@ -31,9 +32,12 @@ export function createSession(world,raw=null){
  const progress=cleanProgress(isV2||legacy?raw:null);
  const player=createPlayer();player.distance=clamp(finite(isV2?raw?.player?.distance:progress.distance),0,1e9);
  const mode=isV2&&raw.mode==='walking'?'walking':'riding';
- const vehicle={...safePose(isV2?raw.vehicle:START,world,8),speed:0};
- let actor=mode==='riding'?vehicle:safePose(raw?.player,world,6);
- if(mode==='walking'&&distance(actor,vehicle)<12)actor=findDismountPosition(vehicle,world)||{...START};
+ const vehicle={...safePose(isV2?raw.vehicle:START,world,'riding'),speed:0};
+ let actor=mode==='riding'?vehicle:safePose(raw?.player,world,'walking');
+ if(mode==='walking'&&bodiesOverlap(collisionBody(actor,'walking'),collisionBody(vehicle,'scooter'))){
+  actor=findDismountPosition(vehicle,world);
+  if(!actor){Object.assign(vehicle,START);actor=findDismountPosition(vehicle,world)||{x:START.x+20,y:START.y,angle:START.angle};}
+ }
  Object.assign(player,{x:actor.x,y:actor.y,angle:actor.angle,speed:0});
  return {version:2,player,vehicle,mode,stamps:progress.stamps,night:progress.night,
   quest:cleanQuest(isV2?raw.quest:null),coins:isV2&&Number.isInteger(raw.coins)&&raw.coins>=0?Math.min(raw.coins,999999):0,
@@ -55,7 +59,7 @@ export function questObjective(state){
  let station,clue,stageLabel;
  if(stage==='available'){station=QUEST_STATIONS.giver;clue='到巷口夜市的阿沐茶舖，接下第一份送暖委託。';stageLabel='接取委託 · 1 / 4';}
  else if(stage==='pickup'){station=QUEST_STATIONS.pickup;clue='老闆託你送一杯熱茶。到街角取貨點領取，靠近後按 E。';stageLabel='領取熱茶 · 2 / 4';}
- else if(stage==='carrying'){station=QUEST_STATIONS.delivery;clue=`熱茶已領取。騎上機車前往老街，還需騎乘 ${Math.max(0,Math.ceil(REQUIRED_RIDE_DISTANCE-state.quest.rideDistance))} m。`;stageLabel='騎車送暖 · 3 / 4';}
+ else if(stage==='carrying'){station=QUEST_STATIONS.delivery;clue=`熱茶已領取。騎上機車前往老街，還需騎乘 ${Math.max(0,Math.ceil(toMetres(REQUIRED_RIDE_DISTANCE-state.quest.rideDistance)))} m。`;stageLabel='騎車送暖 · 3 / 4';}
  else{station=QUEST_STATIONS.delivery;clue=state.mode==='riding'?'到修傘攤附近停車，按 F 下車後走近師傅交付。':'步行靠近修傘師傅，按 E 交付熱茶，完成後獲得 300 遊戲幣。';stageLabel='下車交付 · 4 / 4';}
  return {...station,clue,stageLabel};
 }
@@ -65,7 +69,7 @@ export function questInteraction(state){
  let label='',reason='',action='';
  if(stage==='available'){label='接下送茶委託';action='accept';}
  else if(stage==='pickup'){label='領取熱茶';action='pickup';}
- else if(stage==='carrying'){label='還需要騎車送一段路';reason=`先騎車累積 ${Math.ceil(REQUIRED_RIDE_DISTANCE-state.quest.rideDistance)} m，再下車交付`;action='wait';}
+ else if(stage==='carrying'){label='還需要騎車送一段路';reason=`先騎車累積 ${Math.ceil(toMetres(REQUIRED_RIDE_DISTANCE-state.quest.rideDistance))} m，再下車交付`;action='wait';}
  else if(state.mode!=='walking'){label='先按 F 下車，再交付';reason='請先停車並下車，親手把茶交給師傅';action='deliver';}
  else{label='交付熱茶 · +300';action='deliver';}
  if(Math.abs(state.player.speed)>=8)reason='先慢下來，再與街角居民互動';

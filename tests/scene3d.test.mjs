@@ -11,11 +11,11 @@ test('3D city contains real mesh geometry and efficient instanced windows',()=>{
 });
 test('3D scooter has volumetric wheels, body, and rider',()=>{
  const scooter=createScooter(),bounds=new Box3().setFromObject(scooter);
- assert.ok(scooter.children.length>15);assert.ok(bounds.max.y>30);assert.ok(bounds.max.x-bounds.min.x>20);assert.ok(bounds.max.z-bounds.min.z>10);
+ assert.ok(scooter.children.length>=9);assert.ok(bounds.max.y>16);assert.ok(bounds.max.x-bounds.min.x>19);assert.ok(bounds.max.z-bounds.min.z>8);
 });
 test('third-person camera frames the rider from behind at spawn',()=>{
  const c=new PerspectiveCamera(58,1.5,1,1800),pose=chaseCameraPose(START);c.position.copy(pose.position);c.lookAt(pose.target);c.updateMatrixWorld();
- const p=new Vector3(START.x,16,START.y).project(c);assert.ok(Math.abs(p.x)<.05);assert.ok(p.y>-.8&&p.y<.5);assert.ok(p.z<1);
+ const p=new Vector3(START.x,10,START.y).project(c);assert.ok(Math.abs(p.x)<.05);assert.ok(p.y>-.8&&p.y<.5);assert.ok(p.z<1);
 });
 
 test('world coordinates map to XZ while elevation remains Three.js Y',()=>{
@@ -51,7 +51,7 @@ test('spawn camera rays hit rider before ground in desktop and portrait views',(
  for(const [mobile,aspect,fov] of [[false,1.5,58],[true,390/844,66]]){
   const pose=chaseCameraPose(START,START.angle,mobile),camera=new PerspectiveCamera(fov,aspect,1,1800);
   camera.position.copy(pose.position);camera.lookAt(pose.target);camera.updateMatrixWorld(true);
-  for(const height of [20,28]){
+  for(const height of [10,16]){
    const target=worldToScene(START.x,START.y,height),projected=target.clone().project(camera);
    assert.ok(Math.abs(projected.x)<.05&&projected.y>-.85&&projected.y<.8);
    const ray=new Raycaster(pose.position,target.clone().sub(pose.position).normalize());
@@ -70,12 +70,12 @@ test('west-facing road camera shortens before the blocking building',async()=>{
  const world=createWorld(),player={x:800,y:550,angle:Math.PI},scene=new Scene(),{city}=createCity(world),scooter=createScooter();
  applyVehiclePose(scooter,player);scene.add(city,scooter);scene.updateMatrixWorld(true);
  const desired=chaseCameraPose(player).position,corrected=constrainCameraPosition(player,desired,createCameraBlockers(world));
- assert.equal(desired.x,919);assert.ok(corrected.x<desired.x-20,'Camera must move ahead of the wall');
- const target=worldToScene(player.x,player.y,20),ray=new Raycaster(corrected,target.clone().sub(corrected).normalize());
+ assert.equal(desired.x,866);assert.ok(corrected.x<855,'Camera must move ahead of the wall');
+ const target=worldToScene(player.x,player.y,11),ray=new Raycaster(corrected,target.clone().sub(corrected).normalize());
  const hits=ray.intersectObjects(scene.children,true);let owner=hits[0].object;while(owner&&owner!==scooter)owner=owner.parent;
  assert.equal(owner,scooter,'Corrected camera sees the rider before any wall');
  const camera=new PerspectiveCamera(58,1.5,1,1800);camera.position.copy(corrected);camera.lookAt(cameraAimTarget(player,player.angle,corrected));camera.updateMatrixWorld();
- const helmet=worldToScene(player.x,player.y,28).project(camera);assert.ok(Math.abs(helmet.x)<1&&Math.abs(helmet.y)<1&&helmet.z<1);
+ const helmet=worldToScene(player.x,player.y,16).project(camera);assert.ok(Math.abs(helmet.x)<1&&Math.abs(helmet.y)<1&&helmet.z<1);
 });
 test('post-interpolation camera constraint keeps turning views out of occluders',async()=>{
  const {createCameraBlockers,constrainCameraPosition,cameraAimTarget}=await import('../src/renderer3d.js');
@@ -87,7 +87,7 @@ test('post-interpolation camera constraint keeps turning views out of occluders'
    const player={...point,angle:-Math.PI/2+i*Math.PI/18};
    const wanted=constrainCameraPosition(player,chaseCameraPose(player).position,blockers);
    const interpolated=previous.clone().lerp(wanted,.22);
-   const position=constrainCameraPosition(player,interpolated,blockers),focus=worldToScene(player.x,player.y,20);
+   const position=constrainCameraPosition(player,interpolated,blockers),focus=worldToScene(player.x,player.y,11);
    const ray=new Raycaster(focus,position.clone().sub(focus).normalize(),.2,focus.distanceTo(position));
    const hits=ray.intersectObjects(city.children,true).filter(hit=>hit.object.material?.transparent!==true);
    assert.equal(hits.length,0,`Occlusion at (${point.x},${point.y}), turn ${i}`);
@@ -109,7 +109,7 @@ test('continuous throttle-and-turn play keeps the smoothed chase camera clear',a
    const delta=Math.atan2(Math.sin(player.angle-heading),Math.cos(player.angle-heading));heading+=delta*.07;
    const wanted=constrainCameraPosition(player,chaseCameraPose(player,heading).position,blockers);
    position.lerp(wanted,.09);position.copy(constrainCameraPosition(player,position,blockers));updateFoliageVisibility(softOccluders,player,position);
-   for(const height of [18,28]){
+   for(const height of [10,16]){
     const target=worldToScene(player.x,player.y,height),length=position.distanceTo(target);
     const ray=new Raycaster(position,target.clone().sub(position).normalize(),.1,length-.2);
     const hits=ray.intersectObjects(city.children,true).filter(hit=>hit.object.material?.transparent!==true);
@@ -121,7 +121,7 @@ test('continuous throttle-and-turn play keeps the smoothed chase camera clear',a
 
 test('nearby tree crowns fade without changing distant foliage materials',async()=>{
  const {updateFoliageVisibility}=await import('../src/renderer3d.js');const {foliage}=createCity(createWorld());
- const point=foliage[0].bounds.getCenter(new Vector3()),player={x:point.x,y:point.z};updateFoliageVisibility(foliage,player);
+ const point=foliage[0].bounds.getCenter(new Vector3()),player={x:point.x,y:point.z};updateFoliageVisibility(foliage,player,new Vector3(point.x,point.y+15,point.z));
  assert.equal(foliage[0].mesh.material.transparent,true);assert.equal(foliage[0].mesh.material.opacity,.16);assert.equal(foliage[0].mesh.material.depthWrite,false);
  assert.ok(foliage.some(e=>e.mesh.material.opacity===1));updateFoliageVisibility(foliage,{x:-9999,y:-9999});assert.ok(foliage.every(e=>e.mesh.material.opacity===1));
 });
@@ -130,11 +130,11 @@ test('hard blockers exclude foliage and extreme wall proximity keeps camera outs
  const {createCameraBlockers,constrainCameraPosition,cameraAimTarget}=await import('../src/renderer3d.js');const world=createWorld(),blockers=createCameraBlockers(world);
  assert.equal(blockers.length,world.buildings.length+world.stalls.length);
  const player={x:846,y:550,angle:Math.PI};
- const position=constrainCameraPosition(player,chaseCameraPose(player).position,blockers),focus=worldToScene(player.x,player.y,20);
- assert.ok(position.distanceTo(focus)>=42);
+ const position=constrainCameraPosition(player,chaseCameraPose(player).position,blockers),focus=worldToScene(player.x,player.y,11);
+ assert.ok(position.distanceTo(focus)>=28);
  for(const [aspect,fov]of [[1.5,58],[390/844,66]]){
   const camera=new PerspectiveCamera(fov,aspect,1,1800);camera.position.copy(position);camera.lookAt(cameraAimTarget(player,player.angle,position));camera.updateMatrixWorld();
-  for(const height of [18,28]){const projected=worldToScene(player.x,player.y,height).project(camera);assert.ok(Math.abs(projected.x)<1&&Math.abs(projected.y)<1&&projected.z>-1&&projected.z<1);}
+  for(const height of [10,16]){const projected=worldToScene(player.x,player.y,height).project(camera);assert.ok(Math.abs(projected.x)<1&&Math.abs(projected.y)<1&&projected.z>-1&&projected.z<1);}
  }
 });
 
@@ -150,8 +150,8 @@ test('actual 3D render loop keeps rider in front of camera and inside desktop/mo
   const state={player,traffic:[],night:false,stamps:[],target:null};
   for(let frame=0;frame<600;frame++){
    updatePlayer(player,{throttle:true,[direction]:true},.02,world);r.render(state,.02);
-   const focus=worldToScene(player.x,player.y,20);assert.ok(r.camera.position.distanceTo(focus)>=42-1e-8);
-   for(const h of [18,28]){
+   const focus=worldToScene(player.x,player.y,11);assert.ok(r.camera.position.distanceTo(focus)>=28-1e-8);
+   for(const h of [10,16]){
     const target=worldToScene(player.x,player.y,h),screen=target.clone().project(r.camera),label=`${width}x${height} ${direction} frame ${frame} height ${h}`;
     assert.ok(Math.abs(screen.x)<1&&Math.abs(screen.y)<1&&screen.z>-1&&screen.z<1,`Rider outside frustum: ${label}`);
     const ray=new T.Raycaster(r.camera.position,target.clone().sub(r.camera.position).normalize(),.1,r.camera.position.distanceTo(target)-.2);
