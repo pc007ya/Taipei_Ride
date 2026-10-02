@@ -1,3 +1,4 @@
+import {createSampleShadowPolicy} from './sample-render-policy.js';
 import * as T from '../vendor/three.module.js';
 import {createSampleStreet,isSampleStreetBuilding} from './sample-street.js';
 import {createSampleScooter,createSampleWalker,animateSampleWalker} from './sample-characters.js';
@@ -9,20 +10,26 @@ function studioEnvironment(renderer){
  const texture=new T.DataTexture(pixels,width,height,T.RGBAFormat,T.FloatType);texture.mapping=T.EquirectangularReflectionMapping;texture.needsUpdate=true;const generator=new T.PMREMGenerator(renderer),target=generator.fromEquirectangular(texture);generator.dispose();texture.dispose();return target;
 }
 export function installArtSample(renderer,world){
- const status={enabled:true,ready:false,error:null},cache=new Map();renderer.sample=status;const street=createSampleStreet(world);renderer.scene.add(street);
- renderer.renderer.shadowMap.enabled=true;renderer.renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.sun.castShadow=true;renderer.sun.shadow.mapSize.set(1024,1024);const camera=renderer.sun.shadow.camera;camera.left=camera.bottom=-145;camera.right=camera.top=145;camera.near=100;camera.far=1050;camera.updateProjectionMatrix();renderer.sun.shadow.bias=-.0003;renderer.sun.shadow.normalBias=.16;
+ const status={enabled:true,ready:false,error:null},cache=new Map(),shadowPolicy=createSampleShadowPolicy();let shadowState={refreshCount:0,size:512,strategy:'not-rendered'},revision=0,shadowSize=0;renderer.sample=status;renderer.scene.traverse(o=>{if(o.isMesh)o.receiveShadow=false;});const street=createSampleStreet(world);renderer.scene.add(street);
+ renderer.renderer.shadowMap.enabled=true;renderer.renderer.shadowMap.autoUpdate=false;renderer.sun.shadow.autoUpdate=false;renderer.renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.sun.castShadow=true;renderer.sun.shadow.mapSize.set(1024,1024);const camera=renderer.sun.shadow.camera;camera.left=camera.bottom=-110;camera.right=camera.top=110;camera.near=100;camera.far=1050;camera.updateProjectionMatrix();renderer.sun.shadow.bias=-.0003;renderer.sun.shadow.normalBias=.16;
  // Keep the exact production sun direction. Target and light translate together
  // so the small shadow map covers the sample instead of wasting an entire city.
  const baseSun=renderer.sun.position.clone(),target=new T.Vector3(800,0,515);renderer.sun.position.copy(baseSun).add(target);renderer.sun.target.position.copy(target);renderer.scene.add(renderer.sun.target);
- const environment=studioEnvironment(renderer.renderer);renderer.scene.environment=environment.texture;renderer.scene.environmentIntensity=.65;
+ const environment=studioEnvironment(renderer.renderer);
+ // Reflection sampling stays on the local glossy surfaces. The matte distant
+ // city keeps the cheap hemisphere lighting used by the released game.
+ const reflect=group=>group.traverse(o=>{if(!o.isMesh)return;for(const material of(Array.isArray(o.material)?o.material:[o.material]))if(material.metalness>.1||material.clearcoat>0||material.roughness<.35){material.envMap=environment.texture;material.envMapIntensity=.65;material.needsUpdate=true;}});reflect(street);
  async function appearance(id){
   if(!cache.has(id))cache.set(id,Promise.all([createSampleScooter(id),createSampleWalker(id)]).then(([scooter,walker])=>({scooter,walker})));
   const models=await cache.get(id);if((renderer.appearance||'sunset')!==id)return;
-  renderer.scene.remove(renderer.scooter);if(renderer.walker)renderer.scene.remove(renderer.walker);renderer.scooter=models.scooter;renderer.walker=models.walker;renderer.walker.visible=false;renderer.scene.add(renderer.scooter,renderer.walker);status.ready=true;
+  renderer.scene.remove(renderer.scooter);if(renderer.walker)renderer.scene.remove(renderer.walker);renderer.scooter=models.scooter;renderer.walker=models.walker;renderer.walker.visible=false;renderer.scene.add(renderer.scooter,renderer.walker);reflect(renderer.scooter);reflect(renderer.walker);revision++;status.ready=true;
  }
  const controller={appearance,update(state,time){
   const daytime=!state.night&&typeof renderer.introProgress!=='number';renderer.light.intensity=daytime?.82:renderer.lastAtmosphere==='dusk'?.72:.55;renderer.sun.intensity=daytime?2.3:renderer.lastAtmosphere==='dusk'?1.5:.5;
   if(state.mode==='walking'&&renderer.walker?.userData.sample)animateSampleWalker(renderer.walker,time,state.player.actualSpeed??state.player.speed);
- },metrics(){const pose={};const walker=renderer.walker;if(walker?.userData.sample){walker.updateMatrixWorld(true);for(const side of ['l','r']){const bone=walker.userData.bones.find(b=>b.name===side+'-foot'),shoe=bone?.getObjectByName('sample-sneaker');pose[side]={foot:bone?.getWorldPosition(new T.Vector3()).toArray(),shoe:shoe?.getWorldPosition(new T.Vector3()).toArray(),localOffset:shoe?.position.toArray()};}}return {...status,pose};}};
+  shadowState=shadowPolicy.sample({state,time,appearance:renderer.appearance,quality:renderer.quality,scale:renderer.renderer.getPixelRatio(),revision,visibility:`${renderer.scooter.visible}:${renderer.walker?.visible}`});
+  if(shadowState.size!==shadowSize){shadowSize=shadowState.size;renderer.sun.shadow.map?.dispose();renderer.sun.shadow.map=null;renderer.sun.shadow.mapSize.set(shadowSize,shadowSize);}
+  if(shadowState.refresh){renderer.renderer.shadowMap.needsUpdate=true;renderer.sun.shadow.needsUpdate=true;}
+ },metrics(){const pose={};const walker=renderer.walker;if(walker?.userData.sample){walker.updateMatrixWorld(true);for(const side of ['l','r']){const bone=walker.userData.bones.find(b=>b.name===side+'-foot'),shoe=bone?.getObjectByName('sample-sneaker');pose[side]={foot:bone?.getWorldPosition(new T.Vector3()).toArray(),shoe:shoe?.getWorldPosition(new T.Vector3()).toArray(),localOffset:shoe?.position.toArray()};}}return {...status,pose,shadow:{strategy:shadowState.strategy,shadowRefreshCount:shadowState.refreshCount,mapSize:shadowState.size,refreshRequested:shadowState.refresh},environment:'local-glossy-materials-only'};}};
  renderer.sampleReady=appearance(renderer.appearance||'sunset').catch(error=>{status.error=error.message;});return controller;
 }

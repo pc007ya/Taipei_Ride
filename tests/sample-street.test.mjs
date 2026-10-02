@@ -41,9 +41,9 @@ test('architectural layers have world-scale UVs and generated PBR maps',()=>{
   for(const part of ['deep-shop-shadow','warm-interior-backwall','shop-counter','original-shop-sign','window-reveal','recessed-window','ceramic-spandrel','base-splash-weathering','facade-service-wire'])assert.ok(names.has(part),part);
   for(const name of ['ceramic-tile','aged-concrete','asphalt','paving','wood','galvanized-metal']){
     const mesh=sample.getObjectByName(`sample-${name}`),m=mesh.material;
-    assert.ok(m.map.isDataTexture);assert.ok(m.bumpMap.isDataTexture);assert.ok(m.roughnessMap.isDataTexture);
+    assert.ok(m.map.isDataTexture);assert.ok(m.normalMap.isDataTexture);assert.ok(m.roughnessMap.isDataTexture);
     assert.ok(new Set(m.map.image.data).size>20,`${name} is textured rather than flat-colored`);
-    assert.ok(m.bumpScale>0&&m.bumpScale<.2);
+    assert.ok(m.normalScale.x>0&&m.normalScale.x<.2);assert.equal(m.normalScale.x,m.normalScale.y);assert.equal(m.bumpMap,null);assert.ok(new Set(m.normalMap.image.data.filter((_,i)=>i%4===0)).size>1,'normal texture retains actual surface relief');
     const uv=mesh.geometry.attributes.uv;assert.ok(Array.from(uv.array).some(v=>v>1),'Materials use world-scale repeats');
   }
   assert.deepEqual(sample.userData.shops,SAMPLE_STREET_SHOPS.map(s=>s.name));

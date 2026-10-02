@@ -5,7 +5,7 @@ import base from './playwright.config.mjs';
 // the opt-in local sample. Neither server is deployed or reachable publicly.
 export default defineConfig({
   ...base,
-  testMatch: '**/sample.spec.mjs',
+  testMatch: ['**/sample.spec.mjs', '**/sample-perf.spec.mjs'],
   timeout: 300_000,
   outputDir: 'sample-results',
   reporter: [['list'], ['html', { outputFolder: 'sample-report', open: 'never' }]],
@@ -17,6 +17,13 @@ export default defineConfig({
       command: 'node scripts/serve.mjs .quality-baseline/dist',
       url: 'http://127.0.0.1:4176',
       env: { PORT: '4176' },
+      reuseExistingServer: false,
+      timeout: 30_000,
+    },
+    {
+      command: 'node scripts/serve.mjs .quality-previous/dist',
+      url: 'http://127.0.0.1:4177',
+      env: { PORT: '4177' },
       reuseExistingServer: false,
       timeout: 30_000,
     },

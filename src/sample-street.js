@@ -43,9 +43,9 @@ function surface(kind) {
   };
   const base={tile:[171,178,171],paving:[145,143,132],asphalt:[81,88,89],wood:[102,76,51],metal:[151,157,153],concrete:[169,164,149]}[kind];
   const map=dataTexture(size,(x,y)=>{const v=value(x,y);return [...base.map(c=>c*v),255];});
-  const bumpMap=dataTexture(size,(x,y)=>{const v=value(x,y)*230;return [v,v,v,255];},false);
+  const normalMap=dataTexture(size,(x,y)=>{const at=(a,b)=>value((a+size)%size,(b+size)%size)*230/255,tileSize=kind==='paving'?16:8,dx=(at(x+1,y)-at(x-1,y))*size/(2*tileSize),dy=(at(x,y+1)-at(x,y-1))*size/(2*tileSize),n=new THREE.Vector3(-dx,-dy,1).normalize();return [(n.x*.5+.5)*255,(n.y*.5+.5)*255,(n.z*.5+.5)*255,255];},false);
   const roughnessMap=dataTexture(64,(x,y)=>{const v=kind==='metal'?160+noise(x,y)*35:212+noise(x,y)*36;return [v,v,v,255];},false);
-  return {map,bumpMap,roughnessMap};
+  return {map,normalMap,roughnessMap};
 }
 function signAtlas() {
   // The Node path is also a deterministic texture so geometry tests need no DOM.
@@ -98,7 +98,7 @@ class GeometryBatches {
   finish(group){
     for(const [material,b]of this.batches){
       const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(b.positions,3));geometry.setAttribute('normal',new THREE.Float32BufferAttribute(b.normals,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(b.uvs,2));geometry.setAttribute('color',new THREE.Float32BufferAttribute(b.colors,3));geometry.computeBoundingSphere();
-      const mesh=new THREE.Mesh(geometry,material);mesh.name=`sample-${material.name}`;mesh.receiveShadow=true;mesh.castShadow=!material.userData.ground;mesh.userData.parts=[...b.parts];group.add(mesh);
+      const mesh=new THREE.Mesh(geometry,material);mesh.name=`sample-${material.name}`;mesh.receiveShadow=true;mesh.castShadow=!material.userData.ground&&!material.transparent;mesh.userData.parts=[...b.parts];group.add(mesh);
     }
     this.boxGeometry.dispose();
   }
@@ -108,7 +108,7 @@ export function createSampleStreet(world) {
   const group=new THREE.Group();group.name='original-start-street-material-study';
   const batch=new GeometryBatches(),materials={};
   function material(name,color,options={}){
-    const m=new THREE.MeshStandardMaterial({name,color,vertexColors:true,roughness:.87,...options});materials[name]=m;return m;
+    if(options.normalMap){options.normalScale=new THREE.Vector2(options.bumpScale??1,options.bumpScale??1);delete options.bumpScale;}const m=new THREE.MeshStandardMaterial({name,color,vertexColors:true,roughness:.87,...options});materials[name]=m;return m;
   }
   const tile=material('ceramic-tile',0xffffff,{...surface('tile'),bumpScale:.13});
   const concrete=material('aged-concrete',0xffffff,{...surface('concrete'),bumpScale:.09});

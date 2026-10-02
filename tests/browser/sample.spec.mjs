@@ -27,6 +27,18 @@ async function photograph(page, testInfo, name) {
   await testInfo.attach(name, { path, contentType: 'image/png' });
 }
 
+async function realFrameWindow(page) {
+  return page.evaluate(() => new Promise(resolve => {
+    const entries = [], began = performance.now();
+    const next = timestamp => {
+      const state = window.taipeiRide.snapshot();
+      entries.push({ timestamp, performance: state.performance, player: { x: state.player.x, y: state.player.y, speed: state.player.speed, actualSpeed: state.player.actualSpeed }, shadow: state.view.sample?.shadow || null, scale: state.effectiveRenderScale, buffer: [state.drawingBufferWidth, state.drawingBufferHeight] });
+      if (timestamp - began >= 6000 && entries.length >= 6) resolve(entries); else requestAnimationFrame(next);
+    };
+    requestAnimationFrame(next);
+  }));
+}
+
 async function inspectionPage(page, variant) {
   await page.route('**/__sample-inspection*', route => route.fulfill({
     contentType: 'text/html',
@@ -180,6 +192,7 @@ for (const variant of variants) test(`normal runtime sample controls and measure
     return Math.abs(Math.atan2(Math.sin(angle - initial), Math.cos(angle - initial)));
   }, headingBeforeTurn)).toBeGreaterThan(.08);
   await page.keyboard.up('d');
+  const movingSamples = await realFrameWindow(page);
   const gaitBeforeCapture = await page.evaluate(() => window.taipeiRide.snapshot());
   await photograph(page, testInfo, `runtime-moving-gait-${variant.id}`);
   const gaitAfterCapture = await page.evaluate(() => window.taipeiRide.snapshot());
@@ -193,15 +206,7 @@ for (const variant of variants) test(`normal runtime sample controls and measure
   await page.keyboard.up('w'); await page.keyboard.down('Space');
   await expect.poll(() => page.evaluate(() => Math.abs(window.taipeiRide.snapshot().player.speed))).toBeLessThan(.1);
   await page.keyboard.up('Space');
-  const samples = await page.evaluate(() => new Promise(resolve => {
-    const entries = [], began = performance.now();
-    const next = timestamp => {
-      const state = window.taipeiRide.snapshot();
-      entries.push({ timestamp, performance: state.performance, scale: state.effectiveRenderScale, buffer: [state.drawingBufferWidth, state.drawingBufferHeight] });
-      if (timestamp - began >= 6000 && entries.length >= 6) resolve(entries); else requestAnimationFrame(next);
-    };
-    requestAnimationFrame(next);
-  }));
+  const samples = await realFrameWindow(page);
   const final = await page.evaluate(() => window.taipeiRide.snapshot());
   const pixels = await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => {
     const gl = document.querySelector('#world').getContext('webgl2');
@@ -214,6 +219,6 @@ for (const variant of variants) test(`normal runtime sample controls and measure
   })));
   expect(final.renderMode).toBe('3d'); expect(final.mode).toBe('walking'); expect(errors).toEqual([]);
   expect(pixels.webgl2).toBe(true); expect(pixels.contextLost).toBe(false); expect(pixels.glError).toBe(0); expect(pixels.colors).toBeGreaterThan(10);
-  await record(testInfo, `runtime-${variant.id}`, { baselineCommit: BASELINE, note: 'Actual main loop and native keyboard. Runtime adaptive resolutions and performance are reported, not forced equal or claimed as a controlled image comparison. Gait snapshots bracket the screenshot while W remains held; time and bones are never frozen.', initial, gaitBeforeCapture, gaitAfterCapture, final, samples, pixels, errors });
+  await record(testInfo, `runtime-${variant.id}`, { baselineCommit: BASELINE, note: 'Actual main loop and native keyboard. Runtime adaptive resolutions and performance are reported, not forced equal or claimed as a controlled image comparison. movingSamples is a six-second held-W window; samples is a separate six-second stationary window. Gait snapshots bracket the screenshot while W remains held; time and bones are never frozen.', initial, movingSamples, gaitBeforeCapture, gaitAfterCapture, final, samples, pixels, errors });
   await photograph(page, testInfo, `runtime-walking-${variant.id}`);
 });

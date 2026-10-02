@@ -156,3 +156,18 @@ These corrections have automated raycast/geometry regression coverage. They do n
 6. Refresh while walking away from a parked scooter and during an active delivery to verify both positions, travel mode, quest stage, stamps and atmosphere. Cancel the full-reset prompt once, then confirm it and verify coins, quest, actor/vehicle positions and collection all reset together.
 7. On a touch device, hold steering and throttle together; release, drag away and interrupt the gesture to check cancellation. Check landscape: the speed display and minimap must sit above the touch controls. If browser storage is disabled, the visible warning must explain that progress will not survive refresh.
 8. Open `?renderer=2d` to verify the clearly labeled compatibility mode. Test both portrait and landscape layouts.
+
+## Isolated material sample evidence
+
+The opt-in `?sample=refined` study remains on an isolated preview branch. It changes the character, scooter materials and three existing street buildings; it is not an approval to replace the whole city or a claim of parity with the reference game.
+
+First sample checkpoint: [`82d7119`](https://github.com/pc007ya/Taipei_Ride/commit/82d7119e97eae5a0af7809de7bc7ecc9a7184cdf), [run 36950826082](https://github.com/pc007ya/Taipei_Ride/actions/runs/36950826082):
+
+- 165 unit tests/build and six actual Chromium WebGL comparison/control cases passed
+- Neutral-light walker, mounted-rider and parked-scooter comparisons use identical camera, target, exposure, viewport and DPR 1 against the fixed `fafab1e` checkout
+- Day street inspection preserves actor pose, camera, sun direction, exposure and drawing buffer. The new shadow/ambient/environment treatment is recorded explicitly rather than presented as unchanged lighting
+- Normal application tests separately drive, brake, dismount, walk and turn with real keyboard input. Screenshots bracket a moving gait, and read-only foot-bone/shoe data verifies attachment
+- Visual review found improved face/body continuity, scooter surfaces, paving and shop depth, but also standing hands intersecting the trousers
+- Software-renderer performance regressed: roughly 5.15 to 1.50 observed FPS at the same 1440×960 CSS viewport and 0.55 drawing scale. The final actor locations differ by about seven world units, so these samples are a runtime warning rather than a controlled-pose benchmark
+
+The follow-up performance fixture compares the fixed first sample against the new candidate with identical poses, frame-indexed movement, animation offsets, camera and 0.55 drawing scale. It records thirty completed WebGL renders after warm-up, uses `gl.finish()` to include GPU completion, and transparently counts real Three.js shadow-map updates. These controlled serial rendering measurements are distinct from normal gameplay FPS. A successful test only establishes valid rendering and matching inputs; the numeric cost and image quality must also be reviewed. Physical-device performance and wider-city suitability remain unverified.

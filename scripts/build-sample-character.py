@@ -48,7 +48,7 @@ def target_skeleton(seated):
    d[s+'-ankle']=dst(.05,3.76,side*2.3);d[s+'-foot-1']=dst(.69,3.17,side*2.3);d[s+'-foot-2']=dst(1.5,3.18,side*2.3)
   else:
    d[s+'-clavicle']=dst(-.13,13.65,side*.65);d[s+'-shoulder']=dst(-.05,13.42,side*1.7)
-   d[s+'-elbow']=dst(.07,10.78,side*1.84);d[s+'-hand']=dst(.2,8.31,side*1.51);d[s+'-hand-2']=dst(.3,7.48,side*1.54)
+   d[s+'-elbow']=dst(.07,10.78,side*1.985);d[s+'-hand']=dst(.2,8.31,side*2.18);d[s+'-hand-2']=dst(.3,7.48,side*2.20)
    d[s+'-upper-leg']=dst(-.01,8.68,side*.94);d[s+'-knee']=dst(.18,4.73,side*1.0)
    d[s+'-ankle']=dst(.02,.94,side*1.06);d[s+'-foot-1']=dst(.62,.23,side*1.06);d[s+'-foot-2']=dst(1.35,.23,side*1.06)
   for finger in range(1,6):
@@ -58,7 +58,7 @@ def target_skeleton(seated):
     else:points=[(5.78,11.46,z),(6.02,11.28,z),(5.99,11.02,z),(5.74,10.96,z)]
     for segment in range(1,5):d[f'{s}-finger-{finger}-{segment}']=dst(*points[segment-1])
    else:
-    q=(SRC[s+'-hand-2']-SRC[s+'-hand']).rotation_difference(d[s+'-hand-2']-d[s+'-hand'])
+    sl=(SRC[s+'-hand-2']-SRC[s+'-hand']).normalized();sw=SRC[s+'-finger-2-1']-SRC[s+'-finger-5-1'];sw=(sw-sl*sw.dot(sl)).normalized();tl=(d[s+'-hand-2']-d[s+'-hand']).normalized();tw=Vector((1,0,0));tw=(tw-tl*tw.dot(tl)).normalized();q=(Matrix((tl,tw,tl.cross(tw))).transposed()@Matrix((sl,sw,sl.cross(sw)))).to_quaternion();d[s+'-palm-rotation']=q
     for segment in range(1,5):d[f'{s}-finger-{finger}-{segment}']=d[s+'-hand']+q@(SRC[f'{s}-finger-{finger}-{segment}']-SRC[s+'-hand'])
  return d
 
@@ -89,7 +89,7 @@ def deform(p,w,target):
  out=Vector()
  for i,weight in w:
   _,a,b,_,_=BONES[i];sa,sb=SRC[a],SRC[b];ta,tb=target[a],target[b]
-  sv=sb-sa;tv=tb-ta;q=sv.rotation_difference(tv);rel=p-sa
+  sv=sb-sa;tv=tb-ta;q=target.get(BONES[i][0][:1]+'-palm-rotation',sv.rotation_difference(tv))if BONES[i][0].endswith('-hand')else sv.rotation_difference(tv);rel=p-sa
   # Preserve limb thickness while changing joint-to-joint length.
   longitudinal=sv.normalized();along=rel.dot(longitudinal);perp=rel-longitudinal*along
   out+=(ta+q@perp+tv.normalized()*along*(tv.length/sv.length))*weight
@@ -132,11 +132,13 @@ def generate(seated):
       # Clothes sit off the body. Shape a loose jacket and trousers rather
       # than a painted naked torso; broad folds are real surface relief.
       best=max(weights_vertex,key=lambda a:a[1])[0];_,a,b,_,_=BONES[best];axis=SRC[b]-SRC[a];t=max(0,min(1,(v-SRC[a]).dot(axis)/axis.length_squared));axis_p=SRC[a]+axis*t;radial=v-axis_p
-      cloth=.09 if category=='jacket' else .1
-      wave=(.045*math.sin(v.y*5+v.z*2)+.024*math.sin(v.y*11-v.x*4))
+      loosen=max(0,min(1,(10.2-v.y)/1.2));cloth=.09+.10*loosen*loosen*(3-2*loosen)if category=='jacket' else .1
+      edge=min(1,max(0,min(v.y-9,14.34-v.y,4.04-abs(v.z))/.35))if category=='jacket'else min(1,max(0,min(v.y-.95,9.23-v.y)/.35));wave=edge*(.045*math.sin(v.y*5+v.z*2)+.024*math.sin(v.y*11-v.x*4))
       if radial.length:v+=radial.normalized()*(cloth+wave)
       if category=='jacket' and v.y<10.5:v.x+=.10*math.sin((v.y-9)*2)
      pos=deform(v,weights_vertex,target)
+     if not seated and category=='skin' and pos.y<9:
+      t=max(0,min(1,(9-pos.y)/.6));pos.z+=math.copysign(.16*t*t*(3-2*t),pos.z)
      used[key]=len(p);p.append([round(x,5)for x in pos]);uv.append([round(x,5)for x in texcoord]);weights_out.append(weights_vertex)
     ids.append(used[key])
    for i in range(1,len(ids)-1):inds.extend([ids[0],ids[i],ids[i+1]])
