@@ -2,7 +2,7 @@
 
 一款以台北街景為靈感、自行撰寫的瀏覽器探索遊戲。騎上機車穿梭街區，也可以停車步行；完成原創送茶委託，或隨心收集六站城市印記。
 
-預設使用 **Three.js 0.186.1 / WebGL 2 / 第三人稱鏡頭**。建築、車輛、角色與地標皆為原創程序化幾何。無法使用 WebGL 時，會清楚標示並啟用 **Canvas 2D 等角相容模式**；兩種畫面共用移動、上下車、任務、遊戲幣與存檔。
+預設使用 **Three.js 0.186.1 / WebGL 2 / 第三人稱鏡頭**。預設建築、車輛、角色與地標為原創程序化幾何；可選美術樣板的人體拓撲採用已明確授權的 CC0 資產，見文末。無法使用 WebGL 時，會清楚標示並啟用 **Canvas 2D 等角相容模式**；兩種畫面共用移動、上下車、任務、遊戲幣與存檔。
 
 > 這是想像中的台北主題世界，不是真實地圖、導航工具或交通安全模擬器。道路、距離、速度與碰撞都經過遊戲化處理。
 
@@ -149,3 +149,9 @@ Use Node.js 22, then `npm ci`, `npm run dev`, `npm test`, and `npm run build`. W
 Version 2 browser-local saves preserve actor and parked-scooter positions, travel mode, quest state, coins, stamps and atmosphere, with safe legacy-v1 migration. Full journey reset requires confirmation. No account, paid API, external CDN, real-money transaction or cloud-save service is needed.
 
 Playwright-based CI checks real Chromium WebGL and captures screenshots. See the exact commit's CI report rather than treating mocked DOM or offline scene tests as proof of browser rendering. Pursuit and replenishment systems remain future work. This is an independently authored game, not the reference site's source-code backup or asset copy.
+
+## 單段美術樣板（尚待同角度實景審核）
+
+在網址加上 `?sample=refined`，可檢視出生街段的局部美術樣板。人物以合法 CC0 MakeHuman 解剖拓撲建立連續衣身、肩胯、手掌及指節；衣料、車漆、橡膠、皮革和街道表面使用原創程序化 PBR 材質，並加入局部即時陰影／環境反射。此模式仍走同一套遊戲操作、碰撞、任務與存檔。沒有該參數時保留已驗收版本；也沒有將樣板擴散至整城。
+
+來源、可再散布授權、來源 hash 和重建步驟見 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。離線建模檢視只用於檢查拓撲和姿態；是否在真 WebGL 下有實質質感提升，以同位置、同角度、同 DPR 的最新 preview CI 截圖和運行資料為準。

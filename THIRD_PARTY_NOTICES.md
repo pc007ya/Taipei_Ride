@@ -4,7 +4,7 @@
 
 Taipei Ride / 台北漫遊的原創程式碼與隨附文件以專案根目錄的 [MIT License](LICENSE) 授權。第三方函式庫保留其原有版權與授權；見下節的 Three.js 聲明。
 
-本專案的城市、車輛、地標示意圖與介面採用自行撰寫的幾何造型、CSS，以及 Three.js／瀏覽器繪圖功能；未隨附第三方照片、地圖圖磚、預製 3D 模型、貼圖、音樂或商用遊戲素材。
+本專案的城市、車輛、地標示意圖與介面採用自行撰寫的幾何造型、CSS，以及 Three.js／瀏覽器繪圖功能；預設版本未隨附第三方照片、地圖圖磚、貼圖、音樂或商用遊戲素材；可選樣板人物採用下節所列 CC0 人體拓撲。
 
 開場選單中的圖示與角色卡片插圖為原創 SVG／CSS。背景音樂、選單按鍵聲與機車引擎聲由原創 WebAudio 合成器在本機產生，未使用參考網站錄音、第三方音樂檔或取樣素材。
 
@@ -29,7 +29,7 @@ Taipei Ride / 台北漫遊的原創程式碼與隨附文件以專案根目錄的
 
 ## English summary
 
-The game uses original procedural geometry, JavaScript modules, CSS, and locally available system fonts. Three.js is its sole third-party runtime dependency, providing the default third-person WebGL 3D renderer; a native Canvas 2D isometric renderer is the compatibility fallback. Three.js is copyright its authors and licensed under MIT. The complete license from the installed package is copied unchanged to `dist/vendor/LICENSE.three.txt` and must remain in redistributed builds. No third-party map tiles, photographs, prebuilt models, textures, music, or font files are bundled.
+The game uses original procedural geometry, JavaScript modules, CSS, and locally available system fonts. Three.js is its sole third-party runtime dependency, providing the default third-person WebGL 3D renderer; a native Canvas 2D isometric renderer is the compatibility fallback. Three.js is copyright its authors and licensed under MIT. The complete license from the installed package is copied unchanged to `dist/vendor/LICENSE.three.txt` and must remain in redistributed builds. No third-party map tiles, photographs, textures, music, or font files are bundled. The opt-in art sample uses the explicitly licensed CC0 anatomical base documented below.
 
 The reference site's source code was not available to this implementation. This is an independently written, style-inspired recreation, not a backup or export of the original. It does not copy code or assets from, and is not affiliated with, taipei-gta.vercel.app or any third-party game brand. Taipei-inspired names and locations are illustrative, not authoritative geographic data. See [LICENSE](LICENSE) for the original project code's MIT license.
 
@@ -40,3 +40,17 @@ CI screenshot runners install a single Noto Sans CJK TC font from the official [
 Automated DOM-flow tests use jsdom 26.1.0 (MIT) and its npm dependencies. These development packages are pinned in package-lock.json and are not included in the static game bundle. Their package license files remain with the installed development dependencies.
 
 - **@playwright/test 1.63.0**, Playwright and playwright-core are development-only browser-test tools, licensed under **Apache License 2.0**. Official project: [microsoft/playwright](https://github.com/microsoft/playwright). Their complete license files are retained in the installed development packages at `node_modules/@playwright/test/LICENSE`, `node_modules/playwright/LICENSE` and `node_modules/playwright-core/LICENSE`. They and the downloaded Chromium test browser are not included in the static game bundle. Chromium retains its own upstream and bundled-component licenses.
+
+## Opt-in art sample: CC0 anatomical base
+
+The `?sample=refined` prototype uses **MakeHuman hm08 base mesh**, including its bundled helper clothing topology and anatomical joint landmarks, released under **CC0 1.0 Universal**. The ordinary game still uses its existing original procedural characters. The prototype adds independently authored fitted garments, cloth relief, skin weighting, riding/standing poses, original procedural PBR textures, sneakers and scooter materials. No MakeHuman application code or third-party addon is executed or bundled.
+
+- Official source revision: [`a8bc2d54ff0ac92e78ff71431b1023eda42bf482`](https://github.com/makehumancommunity/makehuman/tree/a8bc2d54ff0ac92e78ff71431b1023eda42bf482)
+- Source mesh: [`makehuman/data/3dobjs/base.obj`](https://github.com/makehumancommunity/makehuman/blob/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/3dobjs/base.obj)
+- Source SHA-256: `8e761e6624b8f54536409135d1636da63b32486a90d4897f84e121d144f6fb4c`
+- Official asset license: [LICENSE.ASSETS.md](https://github.com/makehumancommunity/makehuman/blob/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/LICENSE.ASSETS.md); [license explanation](https://github.com/makehumancommunity/makehuman/blob/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/LICENSE.md)
+- The asset header credits Data Collection AB, Joel Palmius and Jonas Hauquier (2020). Attribution is retained here although CC0 does not require it.
+- Unmodified source data and license copies are in `assets/source/makehuman/`; generated, dressed runtime meshes are in `public/sample/`. The complete CC0 text ships at `public/sample/LICENSE.CC0.txt`.
+- Rebuild with the project-authored `scripts/build-sample-character.py` using an already installed Blender. That script reads only static OBJ data; it does not import MakeHuman code.
+
+樣板並未取得或重用參考網站的人物、模型、貼圖或程式。街段／機車和所有程序化紋理仍為本專案原創。樣板是獨立視覺驗收範圍，不代表已全城套用或通過最新真瀏覽器驗收。

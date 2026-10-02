@@ -20,10 +20,10 @@ function loft(rings,axis='y',sides=20){
 }
 // Garments follow a continuous joint curve with muscle/cloth cross-sections.
 // Elliptical profiles shape thighs, calves and sleeves without sphere joints.
-function sweptGarment(points,profiles,folds=false,segments=24,sides=12){
+export function sweptGarment(points,profiles,folds=false,segments=24,sides=12){
  const path=new T.CatmullRomCurve3(points.map(p=>new T.Vector3(...p))),positions=[],indices=[],frames=path.computeFrenetFrames(segments,false),first=frames.tangents[0],reference=new T.Vector3(0,0,1).addScaledVector(first,-first.z);if(reference.lengthSq()<1e-6)reference.set(1,0,0).addScaledVector(first,-first.x);reference.normalize();const cos=reference.dot(frames.normals[0]),sin=reference.dot(frames.binormals[0]);
  for(let j=0;j<=segments;j++){const t=j/segments,p=path.getPoint(t),tangent=frames.tangents[j],side=frames.normals[j].clone().multiplyScalar(cos).addScaledVector(frames.binormals[j],sin).normalize(),front=new T.Vector3().crossVectors(side,tangent).normalize(),f=t*(profiles.length-1),i=Math.min(profiles.length-2,Math.floor(f)),u=f-i,rx=T.MathUtils.lerp(profiles[i][0],profiles[i+1][0],u),rz=T.MathUtils.lerp(profiles[i][1],profiles[i+1][1],u);
-  for(let k=0;k<=sides;k++){const a=k/sides*Math.PI*2,crease=folds?1+.035*Math.sin(t*48+a*1.5)*Math.exp(-Math.pow((t-.52)/.16,2)):1,v=p.clone().addScaledVector(front,Math.cos(a)*rx*crease).addScaledVector(side,Math.sin(a)*rz*crease);positions.push(v.x,v.y,v.z);}
+  for(let k=0;k<=sides;k++){const a=k/sides*Math.PI*2,crease=folds?1+.035*Math.sin(t*48+a*2)*Math.exp(-Math.pow((t-.52)/.16,2)):1,v=p.clone().addScaledVector(front,Math.cos(a)*rx*crease).addScaledVector(side,Math.sin(a)*rz*crease);positions.push(v.x,v.y,v.z);}
  }
  for(let j=0;j<segments;j++)for(let i=0;i<sides;i++){const a=j*(sides+1)+i,b=a+sides+1;indices.push(a,a+1,b,a+1,b+1,b);}
  for(const end of [0,segments]){const p=path.getPoint(end/segments),center=positions.length/3;positions.push(p.x,p.y,p.z);for(let i=0;i<sides;i++){const a=end*(sides+1)+i;indices.push(...(end===0?[center,a+1,a]:[center,a,a+1]));}}
@@ -89,7 +89,7 @@ function mountedRider(character='male'){const g=new T.Group();g.name='mounted-ri
 function wheel(g,name,x,r,width){const group=new T.Group();group.name=name;group.position.set(x,r,0);g.add(group);
  mesh(group,new T.TorusGeometry(r-.48,.48,10,24),0x20292a,'tire');for(const side of [-1,1]){const ring=mesh(group,new T.TorusGeometry(r-.87,.14,6,20),trim,'rim','metal');ring.position.z=side*width*.36;for(let i=0;i<5;i++){const a=i/5*Math.PI*2;segment(group,'spoke',[0,0,side*.3],[Math.cos(a)*(r-.95),Math.sin(a)*(r-.95),side*width*.35],.105,.13,0x95aaa7,'metal');}}
  const hub=mesh(group,new T.CylinderGeometry(.4,.4,width*.78,12),trim,'hub','metal');hub.rotation.x=Math.PI/2;return group;}
-export function createScooter(character='male'){const g=new T.Group();g.name='player-scooter';const paint=0xc4d4bd,dark=0x1f3e3c;
+export function createScooter(character='male',raw=false){const g=new T.Group();g.name='player-scooter';const paint=0xc4d4bd,dark=0x1f3e3c;
  wheel(g,'rear-wheel',-6.8,2.7,1.25);wheel(g,'front-wheel',7.15,2.7,1.25);
  mesh(g,loft([{x:-9.7,y:5.7,z:0,ry:.45,rz:.4},{x:-8.7,y:5.8,z:0,ry:1.42,rz:2.1},{x:-6.5,y:5.6,z:0,ry:2.06,rz:3.25},{x:-3.4,y:5.24,z:0,ry:2.27,rz:3.25},{x:-.8,y:4.65,z:0,ry:1.17,rz:2.45}], 'x',24),paint,'rear-fairing','paint');
  mesh(g,loft([{x:5.25,y:2.8,z:0,rx:.55,rz:2.45},{x:6.05,y:4.5,z:0,rx:1.08,rz:3.26},{x:6.65,y:7.0,z:0,rx:1.04,rz:3.0},{x:6.16,y:8.95,z:0,rx:.77,rz:2.25},{x:5.52,y:10.15,z:0,rx:.6,rz:1.08}], 'y',24),paint,'front-leg-shield','paint');
@@ -106,7 +106,7 @@ export function createScooter(character='male'){const g=new T.Group();g.name='pl
  for(const side of [-1,1]){ell(g,'indicator',[6.32,9.2,side*2.19],[.27,.29,.52],0xc59440,'glass');ell(g,'rear-indicator',[-9.02,5.78,side*1.35],[.2,.25,.45],0xc59440,'glass');}
  rounded(g,'tail-light',[-9.6,6.23,0],[.27,.61,1.63],0xa7352c,.09,'glass');rounded(g,'license-plate',[-9.6,4.85,0],[.18,.98,1.82],0xe8e4ce,.045);curve(g,'exhaust',[[-8.2,3.2,-2.11],[-5.62,3.04,-2.48],[-2.8,3.1,-2.46]],.31,0x697c77,'metal');
  for(const [key,p]of Object.entries(RIDER_CONTACTS))anchor(g,`${key}-vehicle-anchor`,p);
- const cargo=rounded(g,'delivery-cargo',[-7.8,10.3,0],[3.5,3.5,4.1],0xc9a872,.2);cargo.visible=false;g.add(mountedRider(character));g.userData.character=character;g.userData.dimensions={length:SCOOTER.length,width:SCOOTER.width};for(const name of ['front-wheel','rear-wheel'])compact(g.getObjectByName(name),name+'-alloy',['tire'],true);compact(g,'scooter-surface',['front-wheel','rear-wheel','mounted-rider','delivery-cargo'],true);contactShadow(g,9.8,3.4);return g;
+ const cargo=rounded(g,'delivery-cargo',[-7.8,10.3,0],[3.5,3.5,4.1],0xc9a872,.2);cargo.visible=false;g.add(mountedRider(character));g.userData.character=character;g.userData.dimensions={length:SCOOTER.length,width:SCOOTER.width};if(!raw){for(const name of ['front-wheel','rear-wheel'])compact(g.getObjectByName(name),name+'-alloy',['tire'],true);compact(g,'scooter-surface',['front-wheel','rear-wheel','mounted-rider','delivery-cargo'],true);}contactShadow(g,9.8,3.4);return g;
 }
 export function setMountedRiderVisible(scooter,visible){const rider=scooter.getObjectByName('mounted-rider');if(rider)rider.visible=visible;}
 // Merge opaque colors for NPCs and traffic shells so detail does not multiply draw calls.

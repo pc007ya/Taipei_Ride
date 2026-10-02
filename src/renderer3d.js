@@ -1,3 +1,4 @@
+import {sampleEnabled,installArtSample,isSampleStreetBuilding} from './art-sample.js';
 import * as THREE from '../vendor/three.module.js';
 import { ROADS, ROAD_WIDTH, LANDMARKS } from './world.js';
 import { QUEST_STATIONS } from './session.js';
@@ -240,12 +241,12 @@ export class Renderer3D{
     this.cameraBlockers=createCameraBlockers(world);
     this.light=new THREE.HemisphereLight(0xd9efe7,0x5e7154,2.4);this.scene.add(this.light);
     this.sun=new THREE.DirectionalLight(0xffefcb,2.3);this.sun.position.set(-200,500,-150);this.scene.add(this.sun);
-    const created=createCity(world);this.scene.add(created.city);this.glass=created.glass;this.lampMaterial=created.lampMaterial;this.foliage=created.foliage;this.softOccluders=created.softOccluders;
+    this.sample={enabled:sampleEnabled(),ready:false,error:null};const created=createCity(this.sample.enabled?{...world,buildings:world.buildings.filter(b=>!isSampleStreetBuilding(b))}:world);this.scene.add(created.city);this.glass=created.glass;this.lampMaterial=created.lampMaterial;this.foliage=created.foliage;this.softOccluders=created.softOccluders;
     this.scooter=createScooter();this.scene.add(this.scooter);this.carMeshes=[];
     this.markers=[...LANDMARKS,...Object.values(QUEST_STATIONS)].map(l=>{const g=new THREE.Group();g.position.set(l.x,1,l.y);const ring=new THREE.Mesh(new THREE.TorusGeometry(12,.45,8,40),new THREE.MeshBasicMaterial({color:l.color}));ring.rotation.x=Math.PI/2;g.add(ring);const pin=new THREE.Mesh(new THREE.OctahedronGeometry(2.5,0),new THREE.MeshBasicMaterial({color:l.color}));pin.position.y=23;g.add(pin);this.scene.add(g);return {l,g,ring,pin};});
     this.questResidents=Object.values(QUEST_STATIONS).map((station,i)=>{const npc=createWalker([0xc78062,0x719baa,0xa29968][i],true,i===1?'female':'male');npc.name=station.id;applyVehiclePose(npc,{x:station.x+29,y:station.y,angle:Math.PI});this.scene.add(npc);return npc;});
     this.pedestrians=Array.from({length:20},(_,i)=>{const g=createPedestrian([0xc9815e,0x799aab,0xcdbd78][i%3]);this.scene.add(g);return g;});
-    this.time=0;this.lastNight=null;this.look=new THREE.Vector3(800,10,515);this.heading=-Math.PI/2;this.resize();
+    this.time=0;this.lastNight=null;this.look=new THREE.Vector3(800,10,515);this.heading=-Math.PI/2;this.resize();if(this.sample.enabled)this.artSample=installArtSample(this,world);
   }
   resize(width=innerWidth,height=innerHeight,pixelRatio=globalThis.devicePixelRatio||1){
     this.cssWidth=Math.max(1,Math.round(width));this.cssHeight=Math.max(1,Math.round(height));
@@ -262,7 +263,7 @@ export class Renderer3D{
   setQuality(preset){this.quality=['auto','low','medium','high','ultra'].includes(preset)?preset:'auto';const ceiling={low:.75,medium:1.2,high:1.6,ultra:2,auto:1.6}[this.quality];if(this.renderScale){this.renderScale.maximum=ceiling;this.renderScale.scale=this.renderScale.pixelRatioCeiling(Math.min(globalThis.devicePixelRatio||1,ceiling));}this.resize();}
   setLookSettings(settings){this.lookController??=createLookController();this.lookController.configure(settings);}
   adjustLook(dx,dy){this.lookController??=createLookController();this.lookController.adjust(dx,dy);}
-  getViewMetrics(){return {...(this.lookController?.snapshot()||{yaw:0,pitch:0,sensitivity:1,invertY:false}),quality:this.quality||'auto',menuView:this.menuView||'city',arrivalProgress:typeof this.arrivalProgress==='number'?this.arrivalProgress:null,position:this.camera.position.toArray()};}
+  getViewMetrics(){return {...(this.lookController?.snapshot()||{yaw:0,pitch:0,sensitivity:1,invertY:false}),quality:this.quality||'auto',menuView:this.menuView||'city',arrivalProgress:typeof this.arrivalProgress==='number'?this.arrivalProgress:null,position:this.camera.position.toArray(),sample:this.artSample?.metrics()||this.sample||{enabled:false,ready:false,error:null}};}
   getPerformanceMetrics(){return {fps:this.renderScale?.observedFps??null,drawCalls:this.renderer.info?.render?.calls??null,triangles:this.renderer.info?.render?.triangles??null};}
   setArrivalProgress(progress){this.arrivalProgress=typeof progress==='number'?THREE.MathUtils.clamp(progress,0,1):null;}
   setAppearance(id){
@@ -270,7 +271,7 @@ export class Renderer3D{
     this.characterModels??={};const previous=this.character||'male';this.characterModels[previous]={scooter:this.scooter,walker:this.walker};
     if(character!==previous){this.scene.remove(this.scooter);if(this.walker)this.scene.remove(this.walker);const cached=this.characterModels[character]||{scooter:createScooter(character),walker:null};this.scooter=cached.scooter;this.walker=cached.walker;this.scene.add(this.scooter);if(this.walker)this.scene.add(this.walker);}
     this.character=character;applyCharacterPalette(this.scooter,this.appearance);if(this.walker)applyCharacterPalette(this.walker,this.appearance);this.previewCharacters??={};
-    if(!this.previewCharacters[character]){const preview=createWalker(undefined,true,character);preview.position.set(815,0,515);preview.visible=false;this.previewCharacters[character]=preview;this.scene.add(preview);}this.previewCharacter=this.previewCharacters[character];applyCharacterPalette(this.previewCharacter,this.appearance);
+    if(!this.previewCharacters[character]){const preview=createWalker(undefined,true,character);preview.position.set(815,0,515);preview.visible=false;this.previewCharacters[character]=preview;this.scene.add(preview);}this.previewCharacter=this.previewCharacters[character];applyCharacterPalette(this.previewCharacter,this.appearance);if(this.artSample)this.sampleReady=this.artSample.appearance(this.appearance).catch(error=>{this.sample.error=error.message;});
   }
   setMenuView(view){this.menuView=view==='character'?'character':'city';}
 
@@ -303,7 +304,7 @@ export class Renderer3D{
     traffic.forEach((car,i)=>{if(!this.carMeshes[i]){this.carMeshes[i]=createCar(car);this.scene.add(this.carMeshes[i]);}applyVehiclePose(this.carMeshes[i],car);});
     for(const m of this.markers){const quest=m.l.type==='quest',done=quest?state.quest?.stage==='completed':stamps.includes(m.l.id);m.g.visible=!quest||target?.id===m.l.id;m.pin.visible=!done;m.pin.position.y=23+Math.sin(this.time*2)*1.2;m.pin.rotation.y=this.time*.7;m.ring.material.color.set(done?0xc2efa1:m.l.color);m.ring.scale.setScalar(target?.id===m.l.id?1.07+Math.sin(this.time*2)*.06:1);}
     this.pedestrians.forEach((p,i)=>{p.position.set(ROADS[i%5]+45,0,180+(i*91+this.time*(i%2?5:-5)+1300)%1220);p.rotation.y=i%2?-Math.PI/2:Math.PI/2;});
-    this.renderer.render(this.scene,this.camera);
+    this.artSample?.update(state,this.time);this.renderer.render(this.scene,this.camera);
   }
   resetCamera(player){this.lookController?.reset();this.heading=player.angle;const pose=chaseCameraPose(player,player.angle,innerWidth<650);this.camera.position.copy(constrainCameraPosition(player,pose.position,this.cameraBlockers));this.look.copy(cameraAimTarget(player,player.angle,this.camera.position));}
 }

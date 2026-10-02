@@ -1,0 +1,49 @@
+name: Isolated material sample review
+on:
+  push:
+    branches: ['preview/material-sample-20261002']
+permissions:
+  contents: read
+jobs:
+  sample:
+    name: Same-camera real WebGL comparison
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Validate the opt-in sample without replacing the city
+        run: npm run check
+      - name: Check out the exact completed baseline for the before images
+        uses: actions/checkout@v4
+        with:
+          ref: fafab1e9ed056ecca6c2e0c1ae8ff8d9d16b5188
+          path: .quality-baseline
+      - name: Build the unchanged baseline with the same installed dependencies
+        run: |
+          ln -s ../node_modules .quality-baseline/node_modules
+          npm run build --prefix .quality-baseline
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/browser/install-ci-font.mjs
+      - name: Capture paired geometry, materials and actual runtime evidence
+        run: npx playwright test --config=playwright.sample.config.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: taipei-material-sample-report
+          path: |
+            sample-report/
+            sample-results/
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: taipei-material-sample-evidence
+          path: |
+            sample-results/**/*.png
+            sample-results/**/*.json
+          retention-days: 14

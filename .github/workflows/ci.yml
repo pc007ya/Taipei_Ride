@@ -1,6 +1,7 @@
 name: Test and build
 on:
   push:
+    branches-ignore: ['preview/**']
   pull_request:
 permissions:
   contents: read
