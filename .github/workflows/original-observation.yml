@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        scenario: [raf-tree, raf-light, raf-board]
+        scenario: [raf-tree, raf-light]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

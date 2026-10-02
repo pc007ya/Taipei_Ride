@@ -42,12 +42,13 @@ try{
   // The first tree is visibly left of the walking lane, beyond the scooter row.
   await hold(['a'],8,'align-left-toward-tree');await hold(['w'],60,'approach-tree');await snap('03-tree-approach');
   await hold(['w'],30,'toward-trunk');await snap('04-tree-forward');
-  await hold(['w'],30,'continued-forward');await snap('05-tree-continued');
+  await hold(['d'],2,'small-right-alignment-at-known-90-frame-view');await snap('05-tree-aligned');
+  for(let i=1;i<=4;i++){await hold(['w'],6,`tree-contact-step-${i}`);await snap(`06-tree-contact-${i}`);}
  }else if(scenario==='raf-light'){
   // The gray lamp and dark signal pole are separately visible near the curb.
   await hold(['a'],16,'align-curbside');await hold(['w'],40,'approach-gray-light');await snap('03-light-approach');
-  await hold(['w'],25,'toward-light');await snap('04-light-forward');
-  await hold(['w'],25,'continued-forward');await snap('05-light-continued');
+  await hold(['d'],6,'small-right-alignment-at-known-40-frame-view');await snap('04-light-aligned');
+  for(let i=1;i<=3;i++){await hold(['w'],8,`light-contact-step-${i}`);await snap(`05-light-contact-${i}`);}
  }else if(scenario==='raf-board'){
   // Follow the visible Ming marker to his stated parked motorcycle using normal keys.
   await hold(['w'],55,'approach-ming');await snap('03-near-ming');
