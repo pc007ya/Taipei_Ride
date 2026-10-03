@@ -59,18 +59,22 @@ jobs:
   scenes:
     name: Scene regressions (${{ matrix.group }}; software WebGL)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: ${{ matrix.timeout }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - group: interface
+            timeout: 30
             tests: game.spec.mjs interface.spec.mjs menu.spec.mjs
           - group: collisions-models
+            timeout: 30
             tests: collision.spec.mjs models.spec.mjs proportions.spec.mjs
           - group: delivery-quest
+            timeout: 45
             tests: quest.spec.mjs
           - group: scene-switching
+            timeout: 30
             tests: scenes.spec.mjs
     steps:
       - uses: actions/checkout@v4

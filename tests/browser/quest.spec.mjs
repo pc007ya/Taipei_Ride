@@ -19,9 +19,11 @@ async function followRoad(page, waypoints, telemetry) {
     await page.keyboard[enabled ? 'down' : 'up'](key);
     if (enabled) held.add(key); else held.delete(key);
   }
-  const deadline = Date.now() + 600_000;
   try {
     for (const [x, y] of waypoints) {
+      // Bound each leg independently: software WebGL can make a progressing
+      // multi-leg route exceed ten minutes without a movement regression.
+      const deadline = Date.now() + 600_000;
       while (true) {
         const { player, mode, quest, effectiveRenderScale, drawingBufferWidth, drawingBufferHeight } = await snapshot(page);
         const remaining = Math.hypot(x-player.x, y-player.y);
@@ -48,7 +50,7 @@ async function followRoad(page, waypoints, telemetry) {
 
 test('complete original delivery quest through live WebGL and real controls', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop', 'Long continuous driving route runs once; all layouts run the general live browser smoke test.');
-  test.setTimeout(1_200_000);
+  test.setTimeout(2_400_000);
   const errors = [], telemetry = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()); });
