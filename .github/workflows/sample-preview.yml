@@ -57,9 +57,21 @@ jobs:
             sample-results/**/*.json
           retention-days: 14
   scenes:
-    name: Xitun scene and Taipei regressions (software WebGL)
+    name: Scene regressions (${{ matrix.group }}; software WebGL)
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - group: interface
+            tests: game.spec.mjs interface.spec.mjs menu.spec.mjs
+          - group: collisions-models
+            tests: collision.spec.mjs models.spec.mjs proportions.spec.mjs
+          - group: delivery-quest
+            tests: quest.spec.mjs
+          - group: scene-switching
+            tests: scenes.spec.mjs
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -73,11 +85,11 @@ jobs:
       - name: Run scene switching, continuous boulevard and full game regressions
         env:
           TAIPEI_SAMPLE: refined
-        run: npx playwright test --config=playwright.regression.config.mjs
+        run: npx playwright test --config=playwright.regression.config.mjs ${{ matrix.tests }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: xitun-and-taipei-regression-report
+          name: xitun-and-taipei-${{ matrix.group }}-report
           path: |
             playwright-report/
             test-results/
