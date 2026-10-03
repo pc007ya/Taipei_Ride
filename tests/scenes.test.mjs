@@ -41,3 +41,18 @@ test('inactive city saves reject nested objects and unbounded stamp data',async(
  const {cleanCitySave}=await import('../src/scenes.js');const raw={player:{x:Infinity,y:120,angle:NaN,distance:1e20},vehicle:{x:600,y:800},stamps:Array.from({length:1000},()=>({nested:'map'})).concat(Array.from({length:100},(_,i)=>String(i))),quest:{stage:'hack',rideDistance:Infinity,scene:{nested:true}},coins:1e20,selectedLandmark:{bad:true},world:{buildings:[]}};
  const cleaned=cleanCitySave(raw);assert.equal(cleaned.stamps.length,6);assert.equal(cleaned.player.distance,1e9);assert.equal(cleaned.coins,999999);assert.equal(cleaned.quest.stage,'available');assert.equal('world'in cleaned,false);assert.equal('scene'in cleaned.quest,false);assert.equal(cleaned.selectedLandmark,null);
 });
+
+test('Autumn Valley water sits above ground inside an open green rim without coplanar overlap',async()=>{
+ const T=await import('../vendor/three.module.js'),{createXitunCity}=await import('../src/xitun-visuals.js');const previous=globalThis.document;
+ globalThis.document={createElement:()=>({width:0,height:0,getContext:()=>({fillRect(){},fillText(){}})})};
+ try{
+  const {city}=createXitunCity(createSceneWorld()),matrix=new T.Matrix4(),color=new T.Color();let water=null,ground=null;
+  city.traverse(object=>{if(!object.isInstancedMesh)return;for(let i=0;i<object.count;i++){object.getMatrixAt(i,matrix);object.getColorAt(i,color);const bounds=object.geometry.boundingBox?.clone()||new T.Box3().setFromBufferAttribute(object.geometry.attributes.position);bounds.applyMatrix4(matrix);const centerInside=bounds.min.x<971&&bounds.max.x>971&&bounds.min.z<964&&bounds.max.z>964;
+   if(color.getHex()===0x85a56d)assert.equal(centerInside,false,'green rim must not fill the water opening');if(centerInside&&color.getHex()===0x58959e)water=bounds;if(centerInside&&color.getHex()===0x90a887)ground=bounds;
+  }});assert.ok(water&&ground);assert.ok(water.max.y>ground.max.y+.05);disposeGroups([city]);
+ }finally{if(previous===undefined)delete globalThis.document;else globalThis.document=previous;}
+});
+
+test('Xitun architecture uses shared 2.2m doors and 3m upper floors',async()=>{
+ const {BUILDING}=await import('../src/scale.js');const world=createSceneWorld();for(const b of world.buildings){assert.equal(b.doorHeight,BUILDING.doorHeight);assert.equal(b.floorPitch,BUILDING.upperFloorHeight);assert.equal(b.h,BUILDING.groundFloorHeight+(b.floorCount-1)*BUILDING.upperFloorHeight);}
+});

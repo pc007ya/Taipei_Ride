@@ -1,4 +1,4 @@
-import {makeTraffic,ROADS,trafficPose,collisionBody,bodiesOverlap} from './world.js';
+import {makeTraffic,ROADS,trafficPose,collisionBody,bodiesOverlap,BUILDING} from './world.js';
 import {createXitunCity} from './xitun-visuals.js';
 export const cityFactory=createXitunCity;
 // North remains up. Distances and bends are compressed into the existing driving
@@ -15,7 +15,7 @@ export const XITUN_LANDMARKS=[
 ];
 export function createSceneWorld(){
  const buildings=[],stalls=[],trees=[],lamps=[],obstacles=[];
- const building=(x,y,w,d,h,color,sign,kind='block')=>{const b={type:'building',kind,x,y,w,d,h,height:h,floorCount:Math.max(2,Math.round(h/28)),color,seed:.3,sign};buildings.push(b);obstacles.push({type:'building',x,y,w,d,height:h});};
+ const building=(x,y,w,d,h,color,sign,kind='block')=>{const floorCount=Math.max(2,Math.round(h/28));h=BUILDING.groundFloorHeight+(floorCount-1)*BUILDING.upperFloorHeight;const b={type:'building',kind,x,y,w,d,h,height:h,floorCount,doorHeight:BUILDING.doorHeight,floorPitch:BUILDING.upperFloorHeight,color,seed:.3,sign};buildings.push(b);obstacles.push({type:'building',x,y,w,d,height:h});};
  building(535,570,210,175,136,'#d9e4df','澄清醫院','hospital');
  building(215,535,215,210,55,'#e7dfc3','萬家福西屯店','store');
  building(1180,1180,205,190,90,'#e9e0cc','臺中國家歌劇院','opera');

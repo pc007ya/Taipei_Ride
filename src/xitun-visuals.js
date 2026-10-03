@@ -1,5 +1,5 @@
 import * as T from '../vendor/three.module.js';
-import {ROADS,ROAD_WIDTH} from './world.js';
+import {ROADS,ROAD_WIDTH,BUILDING} from './world.js';
 // Scene-local geometry, materials and sign textures; no map or renderer cache.
 export function createXitunCity(world){
  const city=new T.Group();city.name='simplified-xitun-city';
@@ -30,13 +30,15 @@ export function createXitunCity(world){
    label(o.sign,cx,13,o.y-5,150,15,'#777469',Math.PI);continue;
   }
   add(cx,0,cz,o.w,o.h,o.d,o.color);add(cx,o.h,cz,o.w+3,3,o.d+3,0xb7c2b2);
-  for(let y=24;y<o.h-10;y+=25)for(let x=o.x+12;x<o.x+o.w-7;x+=24){add(x,y,o.y+o.d+.5,13,13,1,0xffffff,glass);add(x,y,o.y-.5,13,13,1,0xffffff,glass);}
-  add(cx,0,o.y+o.d,45,18,2,0xffffff,glass);label(o.sign,cx,o.kind==='hospital'?46:25,o.y+o.d+1,o.kind==='hospital'?175:135,17,o.kind==='store'?'#91714b':'#356a66');
-  if(o.kind==='hospital'){add(o.x+o.w-24,o.h-38,o.y+o.d+2,6,25,1,0xc45c48);add(o.x+o.w-24,o.h-29,o.y+o.d+2,22,6,1,0xc45c48);add(cx,16,o.y+o.d+9,62,2,18,0x9bc9c5);label('入口',cx,10,o.y+o.d+10,30,9);}
+  for(let y=BUILDING.groundFloorHeight+8;y<o.h-10;y+=BUILDING.upperFloorHeight)for(let x=o.x+12;x<o.x+o.w-7;x+=24){add(x,y,o.y+o.d+.5,13,13,1,0xffffff,glass);add(x,y,o.y-.5,13,13,1,0xffffff,glass);}
+  add(cx,0,o.y+o.d,45,BUILDING.doorHeight,2,0xffffff,glass);label(o.sign,cx,o.kind==='hospital'?46:25,o.y+o.d+1,o.kind==='hospital'?175:135,17,o.kind==='store'?'#91714b':'#356a66');
+  if(o.kind==='hospital'){add(o.x+o.w-24,o.h-38,o.y+o.d+2,6,25,1,0xc45c48);add(o.x+o.w-24,o.h-29,o.y+o.d+2,22,6,1,0xc45c48);add(cx,BUILDING.doorHeight+2,o.y+o.d+9,62,2,18,0x9bc9c5);label('入口',cx,10,o.y+o.d+10,30,9);}
  }
  // The dark center is lower than the green terraces, while the rim stays at
  // walking level. Water bounds match the simulation's fixed obstacle exactly.
- add(965,-1,963,232,1.4,232,0x85a56d);add(970,-.4,966,195,.5,166,0xa0b58b);add(971,-.3,964,136,.7,108,0x58959e);add(970,.2,1057,205,.25,11,0xddd4b9);add(858,.2,967,11,.25,211,0xddd4b9);
+ // Four rim strips leave an actual opening rather than a coplanar green
+ // plate under the water. Distinct heights prevent depth-buffer striping.
+ add(875.5,0,964,55,.4,232,0x85a56d);add(1059.5,0,964,41,.4,232,0x85a56d);add(971,0,879,136,.4,62,0x85a56d);add(971,0,1049,136,.4,62,0x85a56d);add(971,.01,964,136,.1,108,0x58959e);add(970,.2,1057,205,.25,11,0xddd4b9);add(858,.2,967,11,.25,211,0xddd4b9);
  label('秋紅谷',1060,14,1065,75,15,'#697b51');
  for(const o of world.stalls){const cx=o.x+o.w/2,cz=o.y+o.d/2;add(cx,0,cz,o.w,15,o.d,0xa68864);add(cx,24,cz,o.w+5,3,o.d+8,o.color);add(o.x+2,0,o.y+o.d,1.5,24,1.5,0xd6c7a2);add(o.x+o.w-2,0,o.y+o.d,1.5,24,1.5,0xd6c7a2);label(o.sign,cx,18,o.y+o.d+1,39,9,'#815746');}
  label('逢甲夜市',1290,37,435,140,17,'#944d46');

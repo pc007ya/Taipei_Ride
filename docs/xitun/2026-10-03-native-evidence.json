@@ -169,9 +169,9 @@
             "menuView": "city",
             "arrivalProgress": null,
             "position": [
-              312.0088847261936,
-              43.644776077766245,
-              858.8777651840135
+              318.01257831376194,
+              43.644770050932074,
+              858.8777438684757
             ],
             "sample": {
               "enabled": true,
@@ -215,7 +215,7 @@
               },
               "shadow": {
                 "strategy": "cache-unchanged-local-map; moving-actor-and-gait-invalidate",
-                "shadowRefreshCount": 804,
+                "shadowRefreshCount": 799,
                 "mapSize": 1024,
                 "refreshRequested": false
               },
@@ -223,14 +223,14 @@
             }
           },
           "performance": {
-            "fps": 59.98800239904345,
+            "fps": 60.005304336769214,
             "drawCalls": 25,
-            "triangles": 59078
+            "triangles": 58910
           },
           "menu": {
             "phase": "playing",
             "progress": 1,
-            "orbit": 0.09583055555555556,
+            "orbit": 0.09629444444444443,
             "reducedMotion": false,
             "language": "zh",
             "appearance": "sunset",
@@ -262,72 +262,72 @@
           },
           "traffic": [
             {
-              "t": 0.09984235390994749,
+              "t": 0.09871294488769224,
               "speed": 17,
               "route": 3,
               "color": "#efbc50",
               "type": "car",
-              "actualSpeed": 17.000000000058137,
+              "actualSpeed": 16.999999999976552,
               "yielding": false,
-              "x": 506.21810000000505,
+              "x": 502.8164000000049,
               "y": 817.5,
               "angle": 0,
               "perimeter": 3011.9291886010283
             },
             {
-              "t": 0.31920775211874486,
+              "t": 0.3177461639722968,
               "speed": 22,
               "route": 3,
               "color": "#7195ae",
               "type": "car",
-              "actualSpeed": 22.000000000004356,
+              "actualSpeed": 22.000000000008328,
               "yielding": false,
-              "x": 1166.9311458341695,
+              "x": 1162.528945834169,
               "y": 817.5,
               "angle": 0,
               "perimeter": 3011.9291886010283
             },
             {
-              "t": 0.40177232461113827,
+              "t": 0.4017224230395581,
               "speed": 27,
               "route": 3,
               "color": "#df795f",
               "type": "car",
               "actualSpeed": 0,
               "yielding": true,
-              "x": 1413.6660716913239,
-              "y": 825.0877072350254,
-              "angle": 0.753921131013377,
+              "x": 1413.556225822113,
+              "y": 824.985121072338,
+              "angle": 0.7485532738705274,
               "perimeter": 3011.9291886010283
             },
             {
-              "t": 0.7579385485362818,
+              "t": 0.7558126021414494,
               "speed": 32,
               "route": 3,
               "color": "#d4d9d2",
               "type": "car",
-              "actualSpeed": 32.00000000016229,
+              "actualSpeed": 31.999999999907516,
               "yielding": false,
-              "x": 617.6073567981892,
+              "x": 624.0105567981872,
               "y": 1102.5,
               "angle": 3.141592653589793,
               "perimeter": 3011.9291886010283
             },
             {
-              "t": 0.3680592832401668,
+              "t": 0.36712780296650244,
               "speed": 17,
               "route": 1,
               "color": "#547d72",
               "type": "car",
-              "actualSpeed": 16.99999999996623,
+              "actualSpeed": 16.999999999921762,
               "yielding": false,
               "x": 1422.5,
-              "y": 636.6441424500811,
+              "y": 633.24244245008,
               "angle": 1.5707963267948966,
               "perimeter": 3651.9291886010283
             },
             {
-              "t": 0.36791507182160277,
+              "t": 0.36792711579014653,
               "speed": 22,
               "route": 2,
               "color": "#efbc50",
@@ -335,60 +335,60 @@
               "actualSpeed": 0,
               "yielding": true,
               "x": 1422.5,
-              "y": 787.04878449295,
+              "y": 787.1081844929569,
               "angle": 1.5707963267948966,
               "perimeter": 4931.929188601029
             },
             {
-              "t": 0.5593546599360569,
+              "t": 0.5578752500896494,
               "speed": 27,
               "route": 0,
               "color": "#7195ae",
               "type": "car",
-              "actualSpeed": 26.999999999879094,
+              "actualSpeed": 27.000000000040107,
               "yielding": false,
-              "x": 857.7409849000261,
+              "x": 863.1436849000246,
               "y": 1422.5,
               "angle": 3.141592653589793,
               "perimeter": 3651.9291886010283
             },
             {
-              "t": 0.6550023482840263,
+              "t": 0.6532489736512488,
               "speed": 32,
               "route": 1,
               "color": "#df795f",
               "type": "car",
-              "actualSpeed": 31.99999999999891,
+              "actualSpeed": 32.000000000017096,
               "yielding": false,
-              "x": 828.4423999998625,
+              "x": 834.8455999998549,
               "y": 1102.5,
               "angle": 3.141592653589792,
               "perimeter": 3651.9291886010283
             },
             {
-              "t": 0.63240229763192,
+              "t": 0.6317125675344425,
               "speed": 17,
               "route": 2,
               "color": "#d4d9d2",
               "type": "car",
-              "actualSpeed": 16.99999999988454,
+              "actualSpeed": 16.999999999976552,
               "yielding": false,
-              "x": 741.5012436712931,
+              "x": 744.9029436712993,
               "y": 1422.5,
               "angle": 3.141592653589793,
               "perimeter": 4931.929188601029
             },
             {
-              "t": 0.7494212573023155,
+              "t": 0.7482158122422801,
               "speed": 22,
               "route": 0,
               "color": "#547d72",
               "type": "car",
-              "actualSpeed": 21.999982463900075,
+              "actualSpeed": 21.999961015123155,
               "yielding": false,
-              "x": 177.5797299517001,
-              "y": 1396.611520880789,
-              "angle": 4.636905860728817,
+              "x": 178.25470476000694,
+              "y": 1400.9570803995005,
+              "angle": 4.4796844321574865,
               "perimeter": 3651.9291886010283
             }
           ],
@@ -399,16 +399,16 @@
             "movedDistance": 0
           },
           "player": {
-            "x": 312.0793826844837,
+            "x": 318.083046053715,
             "y": 800,
             "angle": 3.141592653589793,
             "speed": 0,
-            "distance": 890.9206173155148,
+            "distance": 884.9169539462821,
             "collisionCooldown": 0,
             "actualSpeed": 0
           },
           "vehicle": {
-            "x": 312.0793826844837,
+            "x": 318.083046053715,
             "y": 800,
             "angle": 3.141592653589793,
             "speed": 0
@@ -592,5 +592,31 @@
         }
       ]
     }
-  ]
+  ],
+  "sourceFileSha256": {
+    "src/arrival.js": "12646be123bab49d2933776ba320df0fd96d6b7cb3889501e666c2ff043ab64e",
+    "src/art-sample.js": "f5dbe920a6e67501247d2a195c13abd066cc9c22f8bddc8a5952564f413f17e9",
+    "src/audio.js": "3e02ee78726b7a4a4017d31618fe5a5211abda906da031d8f00b4d0d3ebbd1b1",
+    "src/camera-controls.js": "2e542f3894977cb813d4fbb9a6cd94e91602f909f0e0fd78aefa369acfb3c0e1",
+    "src/controls-panel.js": "c33e5cc54e4847d52b7bd38069691302847e4061027c7f29d6af3e4a1bb3115d",
+    "src/front-end.js": "405e9b65c4bab97069de76aa85e63773888f40f2e1ebf2af40eefe0b38ba4a17",
+    "src/gamepad.js": "f6347b159c692fa6e74bc447a167d3ce4e2e693eaccd57dc59f0ac88d0ad9321",
+    "src/intro.js": "19f2a67808c27f9a699d0a17c594b49072e8155cd03fabd6a3aaa3d28b51994a",
+    "src/main.js": "99a1e28ddd5cde0da7999566cea02f545b6af0500941d0e0a55a709b185c18e9",
+    "src/models.js": "1f97d9e3d0ceaa5323674b2b3e87c1ce8dd74f425dfe4b67cdbae28bc04422ac",
+    "src/physics.js": "6179cdbaf1adfad369efeeb5fbc59a4b4e41e92e63fa49e1af6837d8ade99949",
+    "src/renderer.js": "c8be7c9bc3c2269f8cb2b5e3a7a0e7852625068fd2ee0409a80facbe5a3d7c38",
+    "src/renderer3d.js": "a93f64668ccbe6c7afc95110fedb009de331e9d34247ea5ac3aae3d51471cfd1",
+    "src/sample-characters.js": "6c53c61c05265c350407cc84dbf91a6ff834b704105994776fed25f86ceae739",
+    "src/sample-geometry.js": "b51b67b0b1585239f314752981c567c59a3ae3e76d9437478792fa06d87a5937",
+    "src/sample-render-policy.js": "107363086a2262b807100824f55738d7b3b3543f65ce98665af4ae12c9045113",
+    "src/sample-street.js": "f8290360847af211c7825fba3f9d17f11e0ef99aff313cb44e32ed5a20159550",
+    "src/scale.js": "37b2551f57876a82ae0ec25b61dbaa77c431193ab95784ee88a695352d5e372f",
+    "src/scene-resources.js": "7e1657959bfbd1478585d82d15ee2426e0b82c21fc7721d302eb0cf97b88aa6b",
+    "src/scenes.js": "250f79d33d1fd0e0cab6a0783e9d33f0403c0e8a789422a512349b908e8527ac",
+    "src/session.js": "4d90083a95620d0a64d8496c40b588db21d7b9b04d377a5e641450ea3d5045c9",
+    "src/world-xitun.js": "e75e2ae06c2f6eb52e3e41e622f805acd46256c8728e900ee8a095e8bb8ac3e6",
+    "src/world.js": "0b2ebf608f7cc9877e34f3475f50504775a62abe13eae4f1c944d642180e0997",
+    "src/xitun-visuals.js": "d3e11221ac487a5b79f05d00871d376f1521ccbd58a32d184db28c0cf67aadcb"
+  }
 }

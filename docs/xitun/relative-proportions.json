@@ -1,0 +1,62 @@
+{
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M6, Unspecified Version)",
+  "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+  "projection": "orthographic, identical scale; lowest visible point aligned to floor without resizing",
+  "unitsPerMetre": 10,
+  "metrics": {
+    "person": {
+      "target": 1.72,
+      "actualHeight": 1.6691589355021716,
+      "deviationPercent": -2.9558758428969933
+    },
+    "car": {
+      "targetHeight": 1.5,
+      "targetLength": 4.4,
+      "actualHeight": 1.4110000466927886,
+      "actualLength": 4.392500114440918,
+      "heightToPersonPercent": 84.53359453563868
+    },
+    "scooter": {
+      "targetLength": 2,
+      "actualLength": 1.9714595794677734,
+      "lengthToPersonPercent": 118.11095621488276
+    },
+    "door": {
+      "height": 2.2,
+      "targetToPersonPercent": 127.90697674418605
+    },
+    "floor": {
+      "upperHeight": 3,
+      "groundHeight": 3.2,
+      "targetToPersonPercent": 174.41860465116278
+    }
+  },
+  "googleMapsVisualChecked": false,
+  "error": 0,
+  "sourceFileSha256": {
+    "src/arrival.js": "12646be123bab49d2933776ba320df0fd96d6b7cb3889501e666c2ff043ab64e",
+    "src/art-sample.js": "f5dbe920a6e67501247d2a195c13abd066cc9c22f8bddc8a5952564f413f17e9",
+    "src/audio.js": "3e02ee78726b7a4a4017d31618fe5a5211abda906da031d8f00b4d0d3ebbd1b1",
+    "src/camera-controls.js": "2e542f3894977cb813d4fbb9a6cd94e91602f909f0e0fd78aefa369acfb3c0e1",
+    "src/controls-panel.js": "c33e5cc54e4847d52b7bd38069691302847e4061027c7f29d6af3e4a1bb3115d",
+    "src/front-end.js": "405e9b65c4bab97069de76aa85e63773888f40f2e1ebf2af40eefe0b38ba4a17",
+    "src/gamepad.js": "f6347b159c692fa6e74bc447a167d3ce4e2e693eaccd57dc59f0ac88d0ad9321",
+    "src/intro.js": "19f2a67808c27f9a699d0a17c594b49072e8155cd03fabd6a3aaa3d28b51994a",
+    "src/main.js": "99a1e28ddd5cde0da7999566cea02f545b6af0500941d0e0a55a709b185c18e9",
+    "src/models.js": "1f97d9e3d0ceaa5323674b2b3e87c1ce8dd74f425dfe4b67cdbae28bc04422ac",
+    "src/physics.js": "6179cdbaf1adfad369efeeb5fbc59a4b4e41e92e63fa49e1af6837d8ade99949",
+    "src/renderer.js": "c8be7c9bc3c2269f8cb2b5e3a7a0e7852625068fd2ee0409a80facbe5a3d7c38",
+    "src/renderer3d.js": "a93f64668ccbe6c7afc95110fedb009de331e9d34247ea5ac3aae3d51471cfd1",
+    "src/sample-characters.js": "6c53c61c05265c350407cc84dbf91a6ff834b704105994776fed25f86ceae739",
+    "src/sample-geometry.js": "b51b67b0b1585239f314752981c567c59a3ae3e76d9437478792fa06d87a5937",
+    "src/sample-render-policy.js": "107363086a2262b807100824f55738d7b3b3543f65ce98665af4ae12c9045113",
+    "src/sample-street.js": "f8290360847af211c7825fba3f9d17f11e0ef99aff313cb44e32ed5a20159550",
+    "src/scale.js": "37b2551f57876a82ae0ec25b61dbaa77c431193ab95784ee88a695352d5e372f",
+    "src/scene-resources.js": "7e1657959bfbd1478585d82d15ee2426e0b82c21fc7721d302eb0cf97b88aa6b",
+    "src/scenes.js": "250f79d33d1fd0e0cab6a0783e9d33f0403c0e8a789422a512349b908e8527ac",
+    "src/session.js": "4d90083a95620d0a64d8496c40b588db21d7b9b04d377a5e641450ea3d5045c9",
+    "src/world-xitun.js": "e75e2ae06c2f6eb52e3e41e622f805acd46256c8728e900ee8a095e8bb8ac3e6",
+    "src/world.js": "0b2ebf608f7cc9877e34f3475f50504775a62abe13eae4f1c944d642180e0997",
+    "src/xitun-visuals.js": "d3e11221ac487a5b79f05d00871d376f1521ccbd58a32d184db28c0cf67aadcb"
+  }
+}
