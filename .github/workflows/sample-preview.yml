@@ -27,12 +27,12 @@ jobs:
         run: |
           ln -s ../node_modules .quality-baseline/node_modules
           npm run build --prefix .quality-baseline
-      - name: Check out the first sample for controlled performance comparison
+      - name: Check out the previous sample for controlled performance comparison
         uses: actions/checkout@v4
         with:
-          ref: 82d7119e97eae5a0af7809de7bc7ecc9a7184cdf
+          ref: 2c8b0cb5fbadbbdd299ecac400b1f8987dcb00ab
           path: .quality-previous
-      - name: Build the first sample without changing its source
+      - name: Build the previous sample without changing its source
         run: |
           ln -s ../node_modules .quality-previous/node_modules
           npm run build --prefix .quality-previous

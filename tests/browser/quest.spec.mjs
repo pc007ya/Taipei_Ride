@@ -63,9 +63,10 @@ test('complete original delivery quest through live WebGL and real controls', as
     // The separate desktop smoke test retains 1440×960. A conventional 720p
     // desktop viewport reduces software-GPU fill cost for this long real route.
     await page.setViewportSize({ width: 1280, height: 720 });
-    await testInfo.attach('execution-viewport', { body: JSON.stringify({ width: 1280, height: 720, graphics: 'real WebGL 2 via Chromium SwiftShader', input: 'normal keyboard', clock: 'unmodified' }), contentType: 'application/json' });
-    await page.goto('/');
+    await testInfo.attach('execution-viewport', { body: JSON.stringify({ width: 1280, height: 720, graphics: 'real WebGL 2; backend depends on launch configuration', input: 'normal keyboard', clock: 'unmodified' }), contentType: 'application/json' });
+    await page.goto(process.env.TAIPEI_SAMPLE==='refined'?'/?sample=refined':'/');
     await page.waitForFunction(() => window.taipeiRide);
+  if(process.env.TAIPEI_SAMPLE==='refined')await page.waitForFunction(()=>window.taipeiRide.snapshot().view.sample?.ready);
     await expect(page.locator('#render-mode')).toHaveText('3D 漫遊');
     await startJourney(page);
     expect((await snapshot(page)).quest.stage).toBe('available');
@@ -83,6 +84,7 @@ test('complete original delivery quest through live WebGL and real controls', as
     const beforeReload = await snapshot(page);
     await page.reload();
     await page.waitForFunction(() => window.taipeiRide);
+  if(process.env.TAIPEI_SAMPLE==='refined')await page.waitForFunction(()=>window.taipeiRide.snapshot().view.sample?.ready);
     const restored = await snapshot(page);
     expect(restored.quest).toEqual(beforeReload.quest);
     expect(restored.mode).toBe(beforeReload.mode);
@@ -107,6 +109,7 @@ test('complete original delivery quest through live WebGL and real controls', as
     await capture('quest-04-completed');
     await page.reload();
     await page.waitForFunction(() => window.taipeiRide);
+  if(process.env.TAIPEI_SAMPLE==='refined')await page.waitForFunction(()=>window.taipeiRide.snapshot().view.sample?.ready);
     expect((await snapshot(page)).quest.stage).toBe('completed');
     expect((await snapshot(page)).coins).toBe(300);
     expect((await snapshot(page)).mode).toBe('walking');

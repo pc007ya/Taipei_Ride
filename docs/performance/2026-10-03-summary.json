@@ -1,0 +1,730 @@
+{
+  "date": "2026-10-03",
+  "previousCommit": "2c8b0cb5fbadbbdd299ecac400b1f8987dcb00ab",
+  "mainCommit": "fafab1e9ed056ecca6c2e0c1ae8ff8d9d16b5188",
+  "device": {
+    "model": "Mac mini",
+    "modelIdentifier": "Mac18,5",
+    "chip": "Apple M6",
+    "gpuCores": 12,
+    "memoryGB": 24,
+    "browser": "Google Chrome 154.0.8037.93",
+    "mode": "headless on local hardware GPU",
+    "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M6, Unspecified Version)",
+    "css": [
+      1440,
+      830
+    ],
+    "buffer": [
+      792,
+      456
+    ],
+    "quality": "low",
+    "renderScale": 0.55,
+    "physicalPhone": false,
+    "physicalDisplayVerified": false
+  },
+  "method": "3 repetitions with rotated version order to balance warm GPU/cache effects; 20 warm-up and 120 measured frames per version; non-disjoint EXT_disjoint_timer_query_webgl2 results; submit is JS/WebGL wall time, not CPU cycles; headless rAF is not physical display scanout; profiler runs excluded.",
+  "modelBefore": {
+    "walker": {
+      "calls": 12,
+      "triangles": 28438,
+      "vertices": 30273,
+      "geometryBytes": 1398540,
+      "materials": 12,
+      "textures": 8
+    },
+    "scooter": {
+      "calls": 20,
+      "triangles": 45110,
+      "vertices": 80289,
+      "geometryBytes": 2999052,
+      "materials": 20,
+      "textures": 12
+    },
+    "street": {
+      "calls": 14,
+      "triangles": 19668,
+      "vertices": 59004,
+      "geometryBytes": 2596176,
+      "materials": 14,
+      "textures": 23
+    }
+  },
+  "modelAfter": {
+    "walker": {
+      "calls": 8,
+      "triangles": 24022,
+      "vertices": 13597,
+      "geometryBytes": 886628,
+      "materials": 8,
+      "textures": 5
+    },
+    "scooter": {
+      "calls": 16,
+      "triangles": 36470,
+      "vertices": 22756,
+      "geometryBytes": 959276,
+      "materials": 16,
+      "textures": 7
+    },
+    "street": {
+      "calls": 14,
+      "triangles": 19668,
+      "vertices": 35820,
+      "geometryBytes": 1694088,
+      "materials": 14,
+      "textures": 13
+    }
+  },
+  "controlledRuns": [
+    {
+      "version": "optimized-sample",
+      "moving": true,
+      "runs": [
+        {
+          "hz": 60.0030001500075,
+          "frame": 16.66583333333333,
+          "render": 2.91916666328907,
+          "submit": 2.9041666626930236,
+          "gpu": 0.9152147916666666,
+          "drawCalls": 164,
+          "triangles": 310668
+        },
+        {
+          "hz": 60.00000000000002,
+          "frame": 16.66666666666666,
+          "render": 3.0358333349227906,
+          "submit": 3.023333335916201,
+          "gpu": 0.9483723583333333,
+          "drawCalls": 164,
+          "triangles": 310668
+        },
+        {
+          "hz": 60.003000150007516,
+          "frame": 16.665833333333328,
+          "render": 3.1108333259820937,
+          "submit": 3.0974999904632567,
+          "gpu": 0.9774367,
+          "drawCalls": 164,
+          "triangles": 310668
+        }
+      ],
+      "mean": {
+        "hz": 60.00200010000501,
+        "frame": 16.666111111111107,
+        "render": 3.021944441397985,
+        "submit": 3.008333329690827,
+        "gpu": 0.94700795,
+        "drawCalls": 164,
+        "triangles": 310668
+      },
+      "range": {
+        "gpu": [
+          0.9152147916666666,
+          0.9774367
+        ],
+        "submit": [
+          2.9041666626930236,
+          3.0974999904632567
+        ]
+      }
+    },
+    {
+      "version": "previous-sample",
+      "moving": true,
+      "runs": [
+        {
+          "hz": 60.00300015000751,
+          "frame": 16.66583333333333,
+          "render": 3.1633333444595335,
+          "submit": 3.15166667898496,
+          "gpu": 1.0998696333333333,
+          "drawCalls": 170,
+          "triangles": 324444
+        },
+        {
+          "hz": 60.00000000000002,
+          "frame": 16.66666666666666,
+          "render": 3.195833334326744,
+          "submit": 3.1791666696468988,
+          "gpu": 1.1355216666666668,
+          "drawCalls": 170,
+          "triangles": 324444
+        },
+        {
+          "hz": 60.00300015000752,
+          "frame": 16.665833333333328,
+          "render": 3.1475000033775964,
+          "submit": 3.1391666710376738,
+          "gpu": 1.0908428833333332,
+          "drawCalls": 170,
+          "triangles": 324444
+        }
+      ],
+      "mean": {
+        "hz": 60.00200010000502,
+        "frame": 16.666111111111107,
+        "render": 3.1688888940546245,
+        "submit": 3.1566666732231776,
+        "gpu": 1.1087447277777778,
+        "drawCalls": 170,
+        "triangles": 324444
+      },
+      "range": {
+        "gpu": [
+          1.0908428833333332,
+          1.1355216666666668
+        ],
+        "submit": [
+          3.1391666710376738,
+          3.1791666696468988
+        ]
+      }
+    },
+    {
+      "version": "main-baseline",
+      "moving": true,
+      "runs": [
+        {
+          "hz": 60.00300015000751,
+          "frame": 16.66583333333333,
+          "render": 1.8466666748126348,
+          "submit": 1.8341666748126348,
+          "gpu": 0.6294488333333333,
+          "drawCalls": 131,
+          "triangles": 225820
+        },
+        {
+          "hz": 60.00300015000752,
+          "frame": 16.665833333333328,
+          "render": 2.081666664282481,
+          "submit": 2.0691666662693025,
+          "gpu": 0.767753325,
+          "drawCalls": 131,
+          "triangles": 225820
+        },
+        {
+          "hz": 60.003000150007495,
+          "frame": 16.665833333333335,
+          "render": 2.4199999958276748,
+          "submit": 2.4091666599114734,
+          "gpu": 0.755867925,
+          "drawCalls": 131,
+          "triangles": 225820
+        }
+      ],
+      "mean": {
+        "hz": 60.00300015000751,
+        "frame": 16.66583333333333,
+        "render": 2.1161111116409304,
+        "submit": 2.1041666669978034,
+        "gpu": 0.7176900277777778,
+        "drawCalls": 131,
+        "triangles": 225820
+      },
+      "range": {
+        "gpu": [
+          0.6294488333333333,
+          0.767753325
+        ],
+        "submit": [
+          1.8341666748126348,
+          2.4091666599114734
+        ]
+      }
+    },
+    {
+      "version": "optimized-sample",
+      "moving": false,
+      "runs": [
+        {
+          "hz": 60.00000000000001,
+          "frame": 16.666666666666664,
+          "render": 2.48666666050752,
+          "submit": 2.472499992450078,
+          "gpu": 0.9843519333333334,
+          "drawCalls": 143,
+          "triangles": 262262
+        },
+        {
+          "hz": 60.003000150007516,
+          "frame": 16.665833333333328,
+          "render": 2.875000003973643,
+          "submit": 2.8558333347241085,
+          "gpu": 0.9835797333333334,
+          "drawCalls": 143,
+          "triangles": 262262
+        },
+        {
+          "hz": 60.00300015000751,
+          "frame": 16.66583333333333,
+          "render": 2.856666660308838,
+          "submit": 2.8474999954303106,
+          "gpu": 0.9727574666666666,
+          "drawCalls": 143,
+          "triangles": 262262
+        }
+      ],
+      "mean": {
+        "hz": 60.00200010000501,
+        "frame": 16.666111111111107,
+        "render": 2.739444441596667,
+        "submit": 2.725277774201499,
+        "gpu": 0.9802297111111111,
+        "drawCalls": 143,
+        "triangles": 262262
+      },
+      "range": {
+        "gpu": [
+          0.9727574666666666,
+          0.9843519333333334
+        ],
+        "submit": [
+          2.472499992450078,
+          2.8558333347241085
+        ]
+      }
+    },
+    {
+      "version": "main-baseline",
+      "moving": false,
+      "runs": [
+        {
+          "hz": 60.00300015000752,
+          "frame": 16.665833333333328,
+          "render": 2.029166664679845,
+          "submit": 2.020833334326744,
+          "gpu": 0.7058655083333333,
+          "drawCalls": 132,
+          "triangles": 231100
+        },
+        {
+          "hz": 60.003000150007516,
+          "frame": 16.665833333333328,
+          "render": 2.2524999916553496,
+          "submit": 2.239999994635582,
+          "gpu": 0.8135963583333333,
+          "drawCalls": 132,
+          "triangles": 231100
+        },
+        {
+          "hz": 60.000000000000036,
+          "frame": 16.666666666666657,
+          "render": 1.8908333371082942,
+          "submit": 1.8833333363135656,
+          "gpu": 0.7575921833333333,
+          "drawCalls": 132,
+          "triangles": 231100
+        }
+      ],
+      "mean": {
+        "hz": 60.00200010000503,
+        "frame": 16.666111111111103,
+        "render": 2.0574999978144963,
+        "submit": 2.048055555091964,
+        "gpu": 0.7590180166666667,
+        "drawCalls": 132,
+        "triangles": 231100
+      },
+      "range": {
+        "gpu": [
+          0.7058655083333333,
+          0.8135963583333333
+        ],
+        "submit": [
+          1.8833333363135656,
+          2.239999994635582
+        ]
+      }
+    },
+    {
+      "version": "previous-sample",
+      "moving": false,
+      "runs": [
+        {
+          "hz": 60,
+          "frame": 16.666666666666668,
+          "render": 2.7383333335320157,
+          "submit": 2.729166667660077,
+          "gpu": 0.9971483833333333,
+          "drawCalls": 147,
+          "triangles": 269798
+        },
+        {
+          "hz": 60.00000000000003,
+          "frame": 16.66666666666666,
+          "render": 2.5858333269755045,
+          "submit": 2.5724999944369,
+          "gpu": 1.0837300916666668,
+          "drawCalls": 147,
+          "triangles": 269798
+        },
+        {
+          "hz": 60.003000150007516,
+          "frame": 16.665833333333328,
+          "render": 3.0375000009934108,
+          "submit": 3.0250000019868213,
+          "gpu": 1.0997786416666666,
+          "drawCalls": 147,
+          "triangles": 269798
+        }
+      ],
+      "mean": {
+        "hz": 60.00100005000252,
+        "frame": 16.666388888888886,
+        "render": 2.7872222205003103,
+        "submit": 2.7755555546945994,
+        "gpu": 1.060219038888889,
+        "drawCalls": 147,
+        "triangles": 269798
+      },
+      "range": {
+        "gpu": [
+          0.9971483833333333,
+          1.0997786416666666
+        ],
+        "submit": [
+          2.5724999944369,
+          3.0250000019868213
+        ]
+      }
+    }
+  ],
+  "stressDevice": {
+    "model": "Mac mini",
+    "modelIdentifier": "Mac18,5",
+    "chip": "Apple M6",
+    "gpuCores": 12,
+    "memoryGB": 24,
+    "browser": "Google Chrome 154.0.8037.93",
+    "mode": "headless on local hardware GPU",
+    "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M6, Unspecified Version)",
+    "css": [
+      1920,
+      1080
+    ],
+    "buffer": [
+      3840,
+      2160
+    ],
+    "quality": "ultra",
+    "renderScale": 2,
+    "physicalPhone": false,
+    "physicalDisplayVerified": false
+  },
+  "stressRuns": [
+    {
+      "version": "optimized-sample",
+      "moving": true,
+      "runs": [
+        {
+          "hz": 60,
+          "frame": 16.666666666666668,
+          "render": 2.9566666672627133,
+          "submit": 2.945833334326744,
+          "gpu": 5.215155391666666,
+          "drawCalls": 164,
+          "triangles": 310668
+        },
+        {
+          "hz": 60.00300015000751,
+          "frame": 16.66583333333333,
+          "render": 3.0625000019868214,
+          "submit": 3.0533333361148833,
+          "gpu": 5.506150566666666,
+          "drawCalls": 164,
+          "triangles": 310668
+        },
+        {
+          "hz": 60.0030001500075,
+          "frame": 16.66583333333333,
+          "render": 3.1283333281675976,
+          "submit": 3.113333327571551,
+          "gpu": 5.118338816666666,
+          "drawCalls": 164,
+          "triangles": 310668
+        }
+      ],
+      "mean": {
+        "hz": 60.002000100005006,
+        "frame": 16.66611111111111,
+        "render": 3.0491666658057106,
+        "submit": 3.0374999993377263,
+        "gpu": 5.279881591666666,
+        "drawCalls": 164,
+        "triangles": 310668
+      },
+      "range": {
+        "gpu": [
+          5.118338816666666,
+          5.506150566666666
+        ],
+        "submit": [
+          2.945833334326744,
+          3.113333327571551
+        ]
+      }
+    },
+    {
+      "version": "previous-sample",
+      "moving": true,
+      "runs": [
+        {
+          "hz": 60.003000150007516,
+          "frame": 16.665833333333328,
+          "render": 3.113333330551783,
+          "submit": 3.098333328962326,
+          "gpu": 5.033617191666667,
+          "drawCalls": 170,
+          "triangles": 324444
+        },
+        {
+          "hz": 60.003000150007495,
+          "frame": 16.665833333333335,
+          "render": 3.088333343466123,
+          "submit": 3.0725000073512394,
+          "gpu": 5.103240125,
+          "drawCalls": 170,
+          "triangles": 324444
+        },
+        {
+          "hz": 60.00300015000751,
+          "frame": 16.66583333333333,
+          "render": 2.972500002384186,
+          "submit": 2.9600000033775964,
+          "gpu": 4.995608216666667,
+          "drawCalls": 170,
+          "triangles": 324444
+        }
+      ],
+      "mean": {
+        "hz": 60.00300015000751,
+        "frame": 16.66583333333333,
+        "render": 3.0580555588006972,
+        "submit": 3.043611113230387,
+        "gpu": 5.044155177777778,
+        "drawCalls": 170,
+        "triangles": 324444
+      },
+      "range": {
+        "gpu": [
+          4.995608216666667,
+          5.103240125
+        ],
+        "submit": [
+          2.9600000033775964,
+          3.098333328962326
+        ]
+      }
+    },
+    {
+      "version": "main-baseline",
+      "moving": true,
+      "runs": [
+        {
+          "hz": 60.00600060006002,
+          "frame": 16.664999999999996,
+          "render": 2.557499998807907,
+          "submit": 2.540000001589457,
+          "gpu": 3.9872276583333335,
+          "drawCalls": 131,
+          "triangles": 225820
+        },
+        {
+          "hz": 60.003000150007516,
+          "frame": 16.665833333333328,
+          "render": 2.2975000043710074,
+          "submit": 2.278333338101705,
+          "gpu": 3.932660275,
+          "drawCalls": 131,
+          "triangles": 225820
+        },
+        {
+          "hz": 60,
+          "frame": 16.666666666666668,
+          "render": 1.970000010728836,
+          "submit": 1.9566666742165884,
+          "gpu": 4.000048466666667,
+          "drawCalls": 131,
+          "triangles": 225820
+        }
+      ],
+      "mean": {
+        "hz": 60.00300025002251,
+        "frame": 16.66583333333333,
+        "render": 2.275000004635917,
+        "submit": 2.2583333379692503,
+        "gpu": 3.973312133333333,
+        "drawCalls": 131,
+        "triangles": 225820
+      },
+      "range": {
+        "gpu": [
+          3.932660275,
+          4.000048466666667
+        ],
+        "submit": [
+          1.9566666742165884,
+          2.540000001589457
+        ]
+      }
+    },
+    {
+      "version": "optimized-sample",
+      "moving": false,
+      "runs": [
+        {
+          "hz": 60.0030001500075,
+          "frame": 16.66583333333333,
+          "render": 2.302499998609225,
+          "submit": 2.2899999976158143,
+          "gpu": 5.092417516666667,
+          "drawCalls": 145,
+          "triangles": 262494
+        },
+        {
+          "hz": 59.99999999999999,
+          "frame": 16.666666666666668,
+          "render": 2.72333333392938,
+          "submit": 2.712500003973643,
+          "gpu": 5.268281083333333,
+          "drawCalls": 145,
+          "triangles": 262494
+        },
+        {
+          "hz": 60.00000000000001,
+          "frame": 16.666666666666664,
+          "render": 3.034999997417132,
+          "submit": 3.019999998807907,
+          "gpu": 5.542426933333333,
+          "drawCalls": 145,
+          "triangles": 262494
+        }
+      ],
+      "mean": {
+        "hz": 60.0010000500025,
+        "frame": 16.66638888888889,
+        "render": 2.686944443318579,
+        "submit": 2.6741666667991213,
+        "gpu": 5.301041844444445,
+        "drawCalls": 145,
+        "triangles": 262494
+      },
+      "range": {
+        "gpu": [
+          5.092417516666667,
+          5.542426933333333
+        ],
+        "submit": [
+          2.2899999976158143,
+          3.019999998807907
+        ]
+      }
+    },
+    {
+      "version": "main-baseline",
+      "moving": false,
+      "runs": [
+        {
+          "hz": 60.000000000000014,
+          "frame": 16.666666666666664,
+          "render": 2.4991666773955026,
+          "submit": 2.487500008940697,
+          "gpu": 4.047127625,
+          "drawCalls": 134,
+          "triangles": 231332
+        },
+        {
+          "hz": 60.003000150007516,
+          "frame": 16.665833333333328,
+          "render": 2.003333333134651,
+          "submit": 1.9916666676600774,
+          "gpu": 4.009604316666667,
+          "drawCalls": 134,
+          "triangles": 231332
+        },
+        {
+          "hz": 60.00000000000003,
+          "frame": 16.66666666666666,
+          "render": 2.0166666646798452,
+          "submit": 1.9999999990065893,
+          "gpu": 3.946454033333333,
+          "drawCalls": 134,
+          "triangles": 231332
+        }
+      ],
+      "mean": {
+        "hz": 60.00100005000252,
+        "frame": 16.666388888888886,
+        "render": 2.173055558403333,
+        "submit": 2.1597222252024544,
+        "gpu": 4.001061991666667,
+        "drawCalls": 134,
+        "triangles": 231332
+      },
+      "range": {
+        "gpu": [
+          3.946454033333333,
+          4.047127625
+        ],
+        "submit": [
+          1.9916666676600774,
+          2.487500008940697
+        ]
+      }
+    },
+    {
+      "version": "previous-sample",
+      "moving": false,
+      "runs": [
+        {
+          "hz": 60.0030001500075,
+          "frame": 16.66583333333333,
+          "render": 2.8791666597127916,
+          "submit": 2.865833326180776,
+          "gpu": 5.482586716666667,
+          "drawCalls": 149,
+          "triangles": 270030
+        },
+        {
+          "hz": 60.0030001500075,
+          "frame": 16.66583333333333,
+          "render": 2.4558333257834115,
+          "submit": 2.443333325783412,
+          "gpu": 4.810127966666666,
+          "drawCalls": 149,
+          "triangles": 270030
+        },
+        {
+          "hz": 60.0030001500075,
+          "frame": 16.66583333333333,
+          "render": 2.908333322405815,
+          "submit": 2.8958333214124043,
+          "gpu": 5.34879255,
+          "drawCalls": 149,
+          "triangles": 270030
+        }
+      ],
+      "mean": {
+        "hz": 60.0030001500075,
+        "frame": 16.66583333333333,
+        "render": 2.7477777693006726,
+        "submit": 2.7349999911255307,
+        "gpu": 5.213835744444444,
+        "drawCalls": 149,
+        "triangles": 270030
+      },
+      "range": {
+        "gpu": [
+          4.810127966666666,
+          5.482586716666667
+        ],
+        "submit": [
+          2.443333325783412,
+          2.8958333214124043
+        ]
+      }
+    }
+  ]
+}

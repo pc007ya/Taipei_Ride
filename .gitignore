@@ -13,3 +13,8 @@ playwright-report/
 test-results/
 vendor/
 qa/
+
+.quality-baseline/
+.quality-previous/
+sample-results/
+sample-report/

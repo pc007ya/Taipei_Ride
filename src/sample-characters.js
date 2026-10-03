@@ -18,13 +18,13 @@ function surface(kind){
   const i=(y*n+x)*4;for(let k=0;k<3;k++){color[i+k]=c;height[i+k]=h;rough[i+k]=r;}color[i+3]=height[i+3]=rough[i+3]=255;
  }
  const tex=(data,srgb=false)=>{const t=new T.DataTexture(data,n,n,T.RGBAFormat);t.wrapS=t.wrapT=T.RepeatWrapping;t.magFilter=T.LinearFilter;t.minFilter=T.LinearMipmapLinearFilter;t.generateMipmaps=true;t.anisotropy=4;if(srgb)t.colorSpace=T.SRGBColorSpace;t.needsUpdate=true;return t;};
- const normal=new Uint8Array(n*n*4);for(let y=0;y<n;y++)for(let x=0;x<n;x++){const h=(a,b)=>height[(((b+n)%n)*n+(a+n)%n)*4]/255,dx=(h(x+1,y)-h(x-1,y))*.7,dy=(h(x,y+1)-h(x,y-1))*.7,v=new T.Vector3(-dx,-dy,1).normalize(),i=(y*n+x)*4;normal[i]=Math.round((v.x*.5+.5)*255);normal[i+1]=Math.round((v.y*.5+.5)*255);normal[i+2]=Math.round((v.z*.5+.5)*255);normal[i+3]=255;}const result={map:tex(color,true),normalMap:tex(normal)};const repeat=kind==='skin'?9:kind==='hair'?3:kind==='paint'?6:34;for(const t of Object.values(result))t.repeat.set(repeat,repeat);textureCache.set(kind,result);return result;
+ const normal=new Uint8Array(n*n*4);for(let y=0;y<n;y++)for(let x=0;x<n;x++){const h=(a,b)=>height[(((b+n)%n)*n+(a+n)%n)*4]/255,dx=(h(x+1,y)-h(x-1,y))*.7,dy=(h(x,y+1)-h(x,y-1))*.7,v=new T.Vector3(-dx,-dy,1).normalize(),i=(y*n+x)*4;normal[i]=Math.round((v.x*.5+.5)*255);normal[i+1]=Math.round((v.y*.5+.5)*255);normal[i+2]=Math.round((v.z*.5+.5)*255);normal[i+3]=255;}const result={map:tex(color,true),normalMap:kind==='hair'?tex(normal):null};const repeat=kind==='skin'?9:kind==='hair'?3:kind==='paint'?6:34;for(const t of Object.values(result))t?.repeat.set(repeat,repeat);textureCache.set(kind,result);return result;
 }
 function fabric(color,kind){const maps=surface(kind);return new T.MeshStandardMaterial({color,...maps,roughness:kind==='skin'?.58:kind==='leather'?.74:.86,normalScale:new T.Vector2(kind==='skin'?.4:1,kind==='skin'?.4:1),metalness:0});}
 function geometry(data){const g=new T.BufferGeometry();for(const [key,source,size]of [['position','positions',3],['normal','normals',3],['uv','uv',2],['skinWeight','skinWeights',4]])g.setAttribute(key,new T.Float32BufferAttribute(data[source],size));g.setAttribute('skinIndex',new T.Uint16BufferAttribute(data.skinIndices,4));g.setIndex(data.indices);g.computeBoundingBox();g.computeBoundingSphere();return g;}
 function addMesh(parent,geo,mat,name,p){const m=new T.Mesh(geo,mat);m.name=name;if(p)m.position.set(...p);m.castShadow=m.receiveShadow=true;parent.add(m);return m;}
-function sphere(parent,name,p,size,mat){const m=addMesh(parent,new T.SphereGeometry(1,24,16),mat,name,p);m.scale.set(...size);return m;}
-function shoe(parent,p){const group=new T.Group();group.name='sample-sneaker';group.position.set(...p);parent.add(group);const rubber=new T.MeshStandardMaterial({color:0xd3d0c3,roughness:.92}),upper=fabric(0x3c4b4c,'cloth');sphere(group,'sole',[.36,.13,0],[1.3,.15,.53],rubber);sphere(group,'shoe-upper',[.28,.40,0],[1.21,.35,.49],upper);sphere(group,'heel-tab',[-.53,.54,0],[.35,.33,.37],upper);const laceMat=new T.MeshStandardMaterial({name:'sneaker-laces',color:0xb6b5a8,roughness:.9});for(let i=0;i<4;i++){const l=addMesh(group,new T.CylinderGeometry(.018,.018,.63,6),laceMat,'laces',[.01+i*.2,.748-i*.045,0]);l.rotation.x=Math.PI/2;l.rotation.y=(i%2?1:-1)*.15;}mergeByMaterial(group,'sneaker-material-batch');return group;}
+function sphere(parent,name,p,size,mat){const m=addMesh(parent,new T.SphereGeometry(1,12,8),mat,name,p);m.scale.set(...size);return m;}
+function shoe(parent,p){const group=new T.Group();group.name='sample-sneaker';group.position.set(...p);parent.add(group);const rubber=new T.MeshStandardMaterial({color:0xd3d0c3,roughness:.92}),upper=fabric(0x3c4b4c,'cloth');sphere(group,'sole',[.36,.13,0],[1.3,.15,.53],rubber);sphere(group,'shoe-upper',[.28,.40,0],[1.21,.35,.49],upper);sphere(group,'heel-tab',[-.53,.54,0],[.35,.33,.37],upper);const laceMat=new T.MeshStandardMaterial({name:'sneaker-laces',color:0xb6b5a8,roughness:.9});for(let i=0;i<4;i++){const l=addMesh(group,new T.CylinderGeometry(.018,.018,.63,6),laceMat,'laces',[.01+i*.2,.748-i*.045,0]);l.rotation.x=Math.PI/2;l.rotation.y=(i%2?1:-1)*.15;}mergeByMaterial(group,'sneaker-material-batch',new T.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:.9}));return group;}
 function helmet(group,head){const paint=new T.MeshPhysicalMaterial({color:0xdad3ba,roughness:.29,metalness:.04,clearcoat:1,clearcoatRoughness:.13}),inside=new T.MeshStandardMaterial({color:0x302d29,roughness:.96});const p=[],ix=[];
  for(let j=0;j<=18;j++)for(let i=0;i<=36;i++){const a=i/36*Math.PI*2,limit=1.25+.71*(1-Math.cos(a))/2,t=j/18*limit;p.push(Math.sin(t)*Math.cos(a)*1.28,Math.cos(t)*1.11,Math.sin(t)*Math.sin(a)*.99);}
  for(let j=0;j<18;j++)for(let i=0;i<36;i++){const a=j*37+i,b=a+37;ix.push(a,a+1,b,a+1,b+1,b);}const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(p,3));geo.setIndex(ix);geo.computeVertexNormals();const m=addMesh(group,geo,paint,'ceramic-open-helmet',[head[0]+.16,15.64+(head[1]-15.64),head[2]]);m.material.side=T.DoubleSide;for(const side of [-1,1]){sphere(group,'helmet-lining',[head[0]-.31,head[1]-.29,side*.77],[.41,.36,.17],inside);const strap=new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3([new T.Vector3(head[0]+.15,head[1]-.32,side*.78),new T.Vector3(head[0]+.61,head[1]-.98,side*.38),new T.Vector3(head[0]+.74,head[1]-1.0,0)]),12,.045,5,false),inside);strap.name='helmet-strap';group.add(strap);}}
@@ -34,7 +34,7 @@ export function createSampleCharacter(data,{mounted=false,appearance='sunset'}={
  const bones=data.bones.map(b=>{const bone=new T.Bone();bone.name=b.name;return bone;});
  data.bones.forEach((b,i)=>{const pi=data.bones.findIndex(p=>p.name===b.parent);bones[i].position.fromArray(b.head);if(pi>=0){bones[i].position.sub(new T.Vector3().fromArray(data.bones[pi].head));bones[pi].add(bones[i]);}else group.add(bones[i]);});group.updateMatrixWorld(true);const skeleton=new T.Skeleton(bones);
  const materials={skin:fabric(0xc79373,'skin'),jacket:fabric(appearance==='river'?0x435777:0x9d5636,'cloth'),denim:fabric(0x263e4b,'denim'),hair:fabric(0x241b17,'hair')};
- for(const part of data.meshes){const g=geometry(part),m=mounted?new T.Mesh(g,materials[part.material]):new T.SkinnedMesh(g,materials[part.material]);m.name=part.name;m.castShadow=m.receiveShadow=true;group.add(m);if(m.isSkinnedMesh){m.bind(skeleton);m.normalizeSkinWeights();}}
+ for(const part of data.meshes){const g=geometry(part);if(mounted){g.deleteAttribute('skinWeight');g.deleteAttribute('skinIndex');}const m=mounted?new T.Mesh(g,materials[part.material]):new T.SkinnedMesh(g,materials[part.material]);m.name=part.name;m.castShadow=m.receiveShadow=true;group.add(m);if(m.isSkinnedMesh){m.bind(skeleton);m.normalizeSkinWeights();}}
  const eyeWhite=new T.MeshStandardMaterial({color:0xa9a397,roughness:.58}),iris=new T.MeshStandardMaterial({color:0x2a211a,roughness:.4});
  for(const pos of data.eyes){sphere(group,'embedded-eye',pos,[.171,.166,.171],eyeWhite);const i=addMesh(group,new T.CircleGeometry(.079,20),iris,'iris',[pos[0]+.175,pos[1],pos[2]]);i.rotation.y=Math.PI/2;}
  if(mounted){const head=data.joints.head;helmet(group,[head[0]+.08,head[1]+.56,head[2]]);}
@@ -48,7 +48,7 @@ export function animateSampleWalker(group,time,speed){const strength=Math.min(.3
 export async function createSampleWalker(appearance='sunset'){return createSampleCharacter((await loadSampleCharacters()).walker,{appearance});}
 
 function curvedShell(original,rings,sides=24){
- const p=original.attributes.position,positions=[],indices=[],steps=28;
+ const p=original.attributes.position,positions=[],indices=[],steps=14;
  const paths=Array.from({length:sides+1},(_,i)=>new T.CatmullRomCurve3(Array.from({length:rings},(_,j)=>new T.Vector3().fromBufferAttribute(p,j*(sides+1)+i))));
  for(let j=0;j<=steps;j++)for(let i=0;i<=sides;i++)positions.push(...paths[i].getPoint(j/steps).toArray());
  const axisY=Math.abs(paths[0].getPoint(0).y-paths[0].getPoint(1).y)>Math.abs(paths[0].getPoint(0).x-paths[0].getPoint(1).x);
@@ -56,9 +56,33 @@ function curvedShell(original,rings,sides=24){
  for(const end of [0,steps]){const c=new T.Vector3();for(let i=0;i<sides;i++)c.add(new T.Vector3().fromArray(positions,(end*(sides+1)+i)*3));c.divideScalar(sides);const center=positions.length/3;positions.push(...c.toArray());for(let i=0;i<sides;i++){const a=end*(sides+1)+i;indices.push(...((end===0)===!axisY?[center,a+1,a]:[center,a,a+1]));}}
  const uv=[];for(let j=0;j<=steps;j++)for(let i=0;i<=sides;i++)uv.push(i/sides,j/steps);uv.push(.5,.5,.5,.5);const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(positions,3));geo.setAttribute('uv',new T.Float32BufferAttribute(uv,2));geo.setIndex(indices);geo.computeVertexNormals();return geo;
 }
-function mergeByMaterial(root,batchName='sample-scooter-surface'){
- const map=new Map();root.updateMatrixWorld(true);const inverse=root.matrixWorld.clone().invert();root.traverse(o=>{if(!o.isMesh||!o.visible||o.name==='delivery-cargo')return;for(let a=o;a&&a!==root;a=a.parent)if(a.name==='mounted-rider')return;const key=o.material;let entry=map.get(key);if(!entry){entry={positions:[],normals:[],uv:[]};map.set(key,entry);}const g=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone();g.applyMatrix4(inverse.clone().multiply(o.matrixWorld));entry.positions.push(...g.attributes.position.array);entry.normals.push(...g.attributes.normal.array);const uv=g.attributes.uv;entry.uv.push(...(uv?uv.array:new Float32Array(g.attributes.position.count*2)));g.dispose();});
- const keep=root.children.filter(c=>c.name==='mounted-rider'||c.name==='delivery-cargo'||(!c.isMesh&&c.children.length===0));root.clear();if(keep.length)root.add(...keep);for(const [material,d]of map){const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(d.positions,3));g.setAttribute('normal',new T.Float32BufferAttribute(d.normals,3));g.setAttribute('uv',new T.Float32BufferAttribute(d.uv,2));const batch=addMesh(root,g,material,batchName);if(material.name==='sneaker-laces'||(batchName==='head-accessory-material-batch'&&!(material.clearcoat>0)))batch.castShadow=false;}}
+// Retain indexed vertices while baking transforms. Footwear uses one matte
+// vertex-color surface per moving bone; sole, upper and laces keep their colors.
+function mergeByMaterial(root,batchName='sample-scooter-surface',unified=null){
+ const map=new Map();root.updateMatrixWorld(true);const inverse=root.matrixWorld.clone().invert();
+ root.traverse(o=>{
+  if(!o.isMesh||!o.visible||o.name==='delivery-cargo')return;
+  for(let a=o;a&&a!==root;a=a.parent)if(a.name==='mounted-rider')return;
+  const key=unified||o.material;let entry=map.get(key);
+  if(!entry){entry={positions:[],normals:[],uv:[],colors:[],indices:[]};map.set(key,entry);}
+  const g=o.geometry.clone();g.applyMatrix4(inverse.clone().multiply(o.matrixWorld));
+  const offset=entry.positions.length/3,p=g.attributes.position,n=g.attributes.normal,uv=g.attributes.uv;
+  for(let i=0;i<p.count;i++){
+   entry.positions.push(p.getX(i),p.getY(i),p.getZ(i));entry.normals.push(n.getX(i),n.getY(i),n.getZ(i));
+   entry.uv.push(uv?.getX(i)||0,uv?.getY(i)||0);
+   if(unified)entry.colors.push(o.material.color.r,o.material.color.g,o.material.color.b);
+  }
+  for(let i=0;i<(g.index?.count||p.count);i++)entry.indices.push(offset+(g.index?g.index.getX(i):i));
+  g.dispose();
+ });
+ const keep=root.children.filter(c=>c.name==='mounted-rider'||c.name==='delivery-cargo'||(!c.isMesh&&c.children.length===0));root.clear();if(keep.length)root.add(...keep);
+ for(const [material,d]of map){
+  const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(d.positions,3));g.setAttribute('normal',new T.Float32BufferAttribute(d.normals,3));g.setAttribute('uv',new T.Float32BufferAttribute(d.uv,2));g.setIndex(d.indices);
+  if(unified)g.setAttribute('color',new T.Float32BufferAttribute(d.colors,3));
+  const batch=addMesh(root,g,material,batchName);
+  if(material.name==='sneaker-laces'||(batchName==='head-accessory-material-batch'&&!(material.clearcoat>0)))batch.castShadow=false;
+ }
+}
 export async function createSampleScooter(appearance='sunset'){
  const {rider}=await loadSampleCharacters(),s=createScooter('male',true);s.remove(s.getObjectByName('mounted-rider'));s.getObjectByName('contact-shadow')?.removeFromParent();
  const paint=new T.MeshPhysicalMaterial({color:0x657c72,...surface('paint'),roughness:.22,metalness:.27,clearcoat:1,clearcoatRoughness:.11,bumpScale:.008});

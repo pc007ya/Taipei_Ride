@@ -7,6 +7,7 @@ import { startJourney } from './controls.mjs';
 const BASELINE = 'fafab1e9ed056ecca6c2e0c1ae8ff8d9d16b5188';
 const variants = [
   { id: 'before', origin: 'http://127.0.0.1:4176', query: '', description: `Published ${BASELINE.slice(0, 7)}` },
+  { id:'previous',origin:'http://127.0.0.1:4177',query:'?sample=refined',description:'Previous sample 2c8b0cb' },
   { id: 'after', origin: 'http://127.0.0.1:4175', query: '?sample=refined', description: 'Opt-in material sample' },
 ];
 const shots = [
@@ -57,7 +58,7 @@ for (const shot of shots) test(`paired neutral-light assets: ${shot.id}`, async 
       const production = await import('/src/renderer3d.js');
       const { applyCharacterPalette } = await import('/src/models.js');
       let object;
-      if (variant.id === 'after') {
+      if (variant.id !== 'before') {
         // The same factories used by the query-selected runtime sample are
         // imported here. This page is explicitly an asset inspection fixture.
         const sample = await import('/src/sample-characters.js');
@@ -103,13 +104,13 @@ for (const shot of shots) test(`paired neutral-light assets: ${shot.id}`, async 
     await record(testInfo, `${shot.id}-${variant.id}`, evidence);
     await photograph(page, testInfo, `${shot.id}-${variant.id}`);
     expect(evidence.webgl2).toBe(true); expect(evidence.contextLost).toBe(false); expect(evidence.glError).toBe(0); expect(evidence.colors).toBeGreaterThan(15);
-    expect(evidence.sample).toBe(variant.id === 'after');
+    expect(evidence.sample).toBe(variant.id !== 'before');
     pair.push(evidence);
   }
-  expect(pair[0].camera).toEqual(pair[1].camera);
-  expect(pair[0].light).toEqual(pair[1].light);
-  expect(pair[0].viewport).toEqual(pair[1].viewport);
-  expect(pair[0].buffer).toEqual(pair[1].buffer);
+  expect(pair[0].camera).toEqual(pair[1].camera); expect(pair[1].camera).toEqual(pair[2].camera);
+  expect(pair[0].light).toEqual(pair[1].light); expect(pair[1].light).toEqual(pair[2].light);
+  expect(pair[0].viewport).toEqual(pair[1].viewport); expect(pair[1].viewport).toEqual(pair[2].viewport);
+  expect(pair[0].buffer).toEqual(pair[1].buffer); expect(pair[1].buffer).toEqual(pair[2].buffer);
   expect(errors).toEqual([]);
 });
 
@@ -131,7 +132,7 @@ test('paired day street uses the production renderer at the same fixed pose', as
       document.querySelector('#title').textContent = `${variant.id.toUpperCase()} · daylight start street · ${variant.description}`;
       document.querySelector('#caption').textContent = 'Production renderer, static saved pose fixture · same day/sun/camera/exposure/DPR · no simulation or performance claim';
     }, { state, variant });
-    if (variant.id === 'after') await expect.poll(() => page.evaluate(() => window.sampleInspection.renderer.getViewMetrics().sample?.ready)).toBe(true);
+    if (variant.id !== 'before') await expect.poll(() => page.evaluate(() => window.sampleInspection.renderer.getViewMetrics().sample?.ready)).toBe(true);
     const evidence = await page.evaluate(() => {
       const { THREE, renderer, state } = window.sampleInspection;
       // An inspection fixture uses a stationary pose, the production reset
@@ -147,12 +148,12 @@ test('paired day street uses the production renderer at the same fixed pose', as
     await record(testInfo, `street-day-${variant.id}`, { baselineCommit: BASELINE, variant: variant.id, ...evidence });
     await photograph(page, testInfo, `street-day-${variant.id}`);
     expect(evidence.webgl2).toBe(true); expect(evidence.contextLost).toBe(false); expect(evidence.glError).toBe(0); expect(evidence.colors).toBeGreaterThan(10);
-    if (variant.id === 'after') {
+    if (variant.id !== 'before') {
       expect(evidence.sample.enabled).toBe(true); expect(evidence.sample.ready).toBe(true); expect(evidence.sample.error).toBeFalsy();
     }
     pair.push(evidence);
   }
-  expect(pair[0].camera).toEqual(pair[1].camera); expect(pair[0].player).toEqual(pair[1].player); expect(pair[0].scale).toEqual(pair[1].scale);
+  expect(pair[0].camera).toEqual(pair[1].camera); expect(pair[1].camera).toEqual(pair[2].camera); expect(pair[0].player).toEqual(pair[1].player); expect(pair[1].player).toEqual(pair[2].player); expect(pair[0].scale).toEqual(pair[1].scale); expect(pair[1].scale).toEqual(pair[2].scale);
   expect(pair[0].night).toBe(false); expect(pair[1].night).toBe(false);
   expect(pair[0].light.sunDirection).toEqual(pair[1].light.sunDirection); expect(pair[0].light.exposure).toBe(pair[1].light.exposure);
   expect(errors).toEqual([]);
@@ -168,11 +169,11 @@ for (const variant of variants) test(`normal runtime sample controls and measure
   page.on('pageerror', error => errors.push(error.message));
   await page.goto(variant.origin + '/' + variant.query);
   await page.waitForFunction(() => window.taipeiRide);
-  if (variant.id === 'after') await expect.poll(() => page.evaluate(() => window.taipeiRide.snapshot().view.sample?.ready), { timeout: 60_000 }).toBe(true);
+  if (variant.id !== 'before') await expect.poll(() => page.evaluate(() => window.taipeiRide.snapshot().view.sample?.ready), { timeout: 60_000 }).toBe(true);
   await startJourney(page);
   const initial = await page.evaluate(() => window.taipeiRide.snapshot());
   expect(initial.renderMode).toBe('3d'); expect(initial.night).toBe(false);
-  if (variant.id === 'after') {
+  if (variant.id !== 'before') {
     expect(initial.view.sample.enabled).toBe(true); expect(initial.view.sample.ready).toBe(true); expect(initial.view.sample.error).toBeFalsy();
   }
   await page.keyboard.down('w');
@@ -197,7 +198,7 @@ for (const variant of variants) test(`normal runtime sample controls and measure
   await photograph(page, testInfo, `runtime-moving-gait-${variant.id}`);
   const gaitAfterCapture = await page.evaluate(() => window.taipeiRide.snapshot());
   await record(testInfo, `runtime-gait-${variant.id}`, { note: 'Real held W and a native D turn; readonly snapshots bracket the moving screenshot.', before: gaitBeforeCapture, after: gaitAfterCapture });
-  if (variant.id === 'after') for (const state of [gaitBeforeCapture, gaitAfterCapture]) for (const side of ['l', 'r']) {
+  if (variant.id !== 'before') for (const state of [gaitBeforeCapture, gaitAfterCapture]) for (const side of ['l', 'r']) {
     const pose = state.view.sample.pose[side];
     expect(pose.foot).toHaveLength(3); expect(pose.shoe).toHaveLength(3); expect(pose.localOffset).toHaveLength(3);
     expect([...pose.foot, ...pose.shoe, ...pose.localOffset].every(Number.isFinite)).toBe(true);

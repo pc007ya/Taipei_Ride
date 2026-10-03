@@ -13,8 +13,9 @@ async function capture(page, testInfo, name) {
 test('new arrival uses the live scene, locks movement, completes and stays seen', async ({ page, isMobile }, testInfo) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.goto('/');
+  await page.goto(process.env.TAIPEI_SAMPLE==='refined'?'/?sample=refined':'/');
   await page.waitForFunction(() => window.taipeiRide);
+  if(process.env.TAIPEI_SAMPLE==='refined')await page.waitForFunction(()=>window.taipeiRide.snapshot().view.sample?.ready);
   const initial = await snapshot(page);
   await expect.poll(async () => (await snapshot(page)).menu.phase).toBe('menu');
   await activateWithKeyboard(page, '#start');
@@ -42,6 +43,7 @@ test('new arrival uses the live scene, locks movement, completes and stays seen'
   await capture(page, testInfo, 'arrival-02-ready-to-play');
   await page.reload();
   await page.waitForFunction(() => window.taipeiRide);
+  if(process.env.TAIPEI_SAMPLE==='refined')await page.waitForFunction(()=>window.taipeiRide.snapshot().view.sample?.ready);
   await startJourney(page, { isMobile });
   const resumed = await snapshot(page);
   expect(resumed.menu.arrival.active).toBe(false);
@@ -52,8 +54,9 @@ test('new arrival uses the live scene, locks movement, completes and stays seen'
 
 test('fresh arrival accepts an immediate trusted keyboard skip', async ({ page }, testInfo) => {
   await observePresentationKeys(page);
-  await page.goto('/');
+  await page.goto(process.env.TAIPEI_SAMPLE==='refined'?'/?sample=refined':'/');
   await page.waitForFunction(() => window.taipeiRide);
+  if(process.env.TAIPEI_SAMPLE==='refined')await page.waitForFunction(()=>window.taipeiRide.snapshot().view.sample?.ready);
   await expect.poll(async () => (await snapshot(page)).menu.phase).toBe('menu');
   const initial = await snapshot(page);
   await activateWithKeyboard(page, '#start');
@@ -75,8 +78,9 @@ test('pause dashboard, control tabs, HUD preferences and actual mouse look', asy
   // This case starts after the already-seen presentation; the separate test
   // above verifies the fresh arrival, including the actual input lock.
   await page.addInitScript(() => localStorage.setItem('taipei-ride:menu:v1', JSON.stringify({ reducedMotion: true, arrivalSeen: true })));
-  await page.goto('/');
+  await page.goto(process.env.TAIPEI_SAMPLE==='refined'?'/?sample=refined':'/');
   await page.waitForFunction(() => window.taipeiRide);
+  if(process.env.TAIPEI_SAMPLE==='refined')await page.waitForFunction(()=>window.taipeiRide.snapshot().view.sample?.ready);
   await startJourney(page, { isMobile });
   const initial = await snapshot(page);
   async function settings() {

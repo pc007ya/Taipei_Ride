@@ -41,9 +41,9 @@ test('architectural layers have world-scale UVs and generated PBR maps',()=>{
   for(const part of ['deep-shop-shadow','warm-interior-backwall','shop-counter','original-shop-sign','window-reveal','recessed-window','ceramic-spandrel','base-splash-weathering','facade-service-wire'])assert.ok(names.has(part),part);
   for(const name of ['ceramic-tile','aged-concrete','asphalt','paving','wood','galvanized-metal']){
     const mesh=sample.getObjectByName(`sample-${name}`),m=mesh.material;
-    assert.ok(m.map.isDataTexture);assert.ok(m.normalMap.isDataTexture);assert.ok(m.roughnessMap.isDataTexture);
+    assert.ok(m.map.isDataTexture);if(name==='asphalt')assert.equal(m.normalMap,null);else assert.ok(m.normalMap.isDataTexture);assert.equal(m.roughnessMap,null);
     assert.ok(new Set(m.map.image.data).size>20,`${name} is textured rather than flat-colored`);
-    assert.ok(m.normalScale.x>0&&m.normalScale.x<.2);assert.equal(m.normalScale.x,m.normalScale.y);assert.equal(m.bumpMap,null);assert.ok(new Set(m.normalMap.image.data.filter((_,i)=>i%4===0)).size>1,'normal texture retains actual surface relief');
+    assert.equal(m.bumpMap,null);if(name!=='asphalt'){assert.ok(m.normalScale.x>0&&m.normalScale.x<.2);assert.equal(m.normalScale.x,m.normalScale.y);assert.ok(new Set(m.normalMap.image.data.filter((_,i)=>i%4===0)).size>1,'normal texture retains actual surface relief');}
     const uv=mesh.geometry.attributes.uv;assert.ok(Array.from(uv.array).some(v=>v>1),'Materials use world-scale repeats');
   }
   assert.deepEqual(sample.userData.shops,SAMPLE_STREET_SHOPS.map(s=>s.name));
@@ -55,4 +55,10 @@ test('static sample stays within a small draw-call and triangle budget',()=>{
   sample.traverse(mesh=>{if(mesh.isMesh){calls++;triangles+=(mesh.geometry.index?.count||mesh.geometry.attributes.position.count)/3;assert.equal(mesh.geometry.attributes.color.count,mesh.geometry.attributes.position.count);}});
   assert.ok(calls<=16,`${calls} draw calls`);assert.ok(triangles<=22000,`${triangles} triangles`);
   assert.equal(calls,sample.userData.drawCalls);assert.equal(triangles,sample.userData.triangles);
+});
+
+test('indexed architectural batches retain hard edges, UVs and palette under the storage budget',()=>{
+ const group=createSampleStreet(createWorld());let bytes=0;
+ group.traverse(o=>{if(!o.isMesh)return;assert.ok(o.geometry.index);for(const a of Object.values(o.geometry.attributes))bytes+=a.array.byteLength;bytes+=o.geometry.index.array.byteLength;});
+ assert.ok(bytes<2200000,`indexed street bytes ${bytes}`);
 });

@@ -171,3 +171,7 @@ First sample checkpoint: [`82d7119`](https://github.com/pc007ya/Taipei_Ride/comm
 - Software-renderer performance regressed: roughly 5.15 to 1.50 observed FPS at the same 1440×960 CSS viewport and 0.55 drawing scale. The final actor locations differ by about seven world units, so these samples are a runtime warning rather than a controlled-pose benchmark
 
 The follow-up performance fixture compares the fixed first sample against the new candidate with identical poses, frame-indexed movement, animation offsets, camera and 0.55 drawing scale. It records thirty render-to-next-`requestAnimationFrame` intervals after warm-up and transparently counts real Three.js shadow-map updates. Synchronous `render()` plus `gl.finish()` time is recorded separately: it did not include the browser's later canvas presentation delay on this Chromium runner, so it must not be converted into FPS. These controlled browser-frame measurements are distinct from normal gameplay FPS. A successful test only establishes valid rendering and matching inputs; the numeric cost and image quality must also be reviewed. Physical-device performance and wider-city suitability remain unverified.
+
+## 2026-10-03 material-cost reduction and Mac hardware GPU validation
+
+See [the controlled performance report](docs/performance/2026-10-03.md) and [machine-readable three-run summary](docs/performance/2026-10-03-summary.json). These measurements identify Apple M6/Metal explicitly; they do not reuse historical SwiftShader results as physical-device evidence.

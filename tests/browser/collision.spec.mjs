@@ -31,8 +31,9 @@ async function loadFixture(page, save) {
     localStorage.setItem(key, JSON.stringify(save));
     localStorage.setItem('taipei-ride:menu:v1', JSON.stringify({ reducedMotion: true, language: 'zh' }));
   }, { save, key: SAVE_KEY });
-  await page.goto('/');
+  await page.goto(process.env.TAIPEI_SAMPLE==='refined'?'/?sample=refined':'/');
   await page.waitForFunction(() => window.taipeiRide);
+  if(process.env.TAIPEI_SAMPLE==='refined')await page.waitForFunction(()=>window.taipeiRide.snapshot().view.sample?.ready);
   await startJourney(page);
   expect((await snapshot(page)).renderMode).toBe('3d');
 }

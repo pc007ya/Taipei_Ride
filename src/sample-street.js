@@ -1,5 +1,6 @@
 import * as THREE from '../vendor/three.module.js';
 import { BUILDING } from './scale.js';
+import {indexSampleGeometry} from './sample-geometry.js';
 
 // One original, render-only material study around the starting intersection.
 // Nothing in this module changes the world, colliders, camera, or simulation.
@@ -30,7 +31,9 @@ function dataTexture(size,pixel,color=true) {
   if(color)texture.colorSpace=THREE.SRGBColorSpace;
   texture.anisotropy=4;texture.needsUpdate=true;return texture;
 }
+const surfaceCache=new Map();
 function surface(kind) {
+  if(surfaceCache.has(kind))return surfaceCache.get(kind);
   const size=256;
   const value=(x,y)=>{
     const fine=noise(x,y,4),coarse=noise(Math.floor(x/8),Math.floor(y/8),7),slow=Math.sin(x*.033)*Math.sin(y*.028);
@@ -43,9 +46,12 @@ function surface(kind) {
   };
   const base={tile:[171,178,171],paving:[145,143,132],asphalt:[81,88,89],wood:[102,76,51],metal:[151,157,153],concrete:[169,164,149]}[kind];
   const map=dataTexture(size,(x,y)=>{const v=value(x,y);return [...base.map(c=>c*v),255];});
-  const normalMap=dataTexture(size,(x,y)=>{const at=(a,b)=>value((a+size)%size,(b+size)%size)*230/255,tileSize=kind==='paving'?16:8,dx=(at(x+1,y)-at(x-1,y))*size/(2*tileSize),dy=(at(x,y+1)-at(x,y-1))*size/(2*tileSize),n=new THREE.Vector3(-dx,-dy,1).normalize();return [(n.x*.5+.5)*255,(n.y*.5+.5)*255,(n.z*.5+.5)*255,255];},false);
-  const roughnessMap=dataTexture(64,(x,y)=>{const v=kind==='metal'?160+noise(x,y)*35:212+noise(x,y)*36;return [v,v,v,255];},false);
-  return {map,normalMap,roughnessMap};
+  const normalMap=kind==='asphalt'?null:dataTexture(size,(x,y)=>{const at=(a,b)=>value((a+size)%size,(b+size)%size)*230/255,tileSize=kind==='paving'?16:8,dx=(at(x+1,y)-at(x-1,y))*size/(2*tileSize),dy=(at(x,y+1)-at(x,y-1))*size/(2*tileSize),n=new THREE.Vector3(-dx,-dy,1).normalize();return [(n.x*.5+.5)*255,(n.y*.5+.5)*255,(n.z*.5+.5)*255,255];},false);
+  // Asphalt micro-normal noise costs a full-screen derivative/sample path;
+  // retain its aggregate color texture, and reserve relief for architecture.
+  // Roughness modulation was only low-amplitude noise. Scalar roughness keeps
+  // the ceramic/wood/metal distinction without a third texture read per pixel.
+  const result={map,normalMap};surfaceCache.set(kind,result);return result;
 }
 function signAtlas() {
   // The Node path is also a deterministic texture so geometry tests need no DOM.
@@ -97,7 +103,7 @@ class GeometryBatches {
   }
   finish(group){
     for(const [material,b]of this.batches){
-      const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(b.positions,3));geometry.setAttribute('normal',new THREE.Float32BufferAttribute(b.normals,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(b.uvs,2));geometry.setAttribute('color',new THREE.Float32BufferAttribute(b.colors,3));geometry.computeBoundingSphere();
+      const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(b.positions,3));geometry.setAttribute('normal',new THREE.Float32BufferAttribute(b.normals,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(b.uvs,2));geometry.setAttribute('color',new THREE.Float32BufferAttribute(b.colors,3));indexSampleGeometry(geometry);geometry.computeBoundingSphere();
       const mesh=new THREE.Mesh(geometry,material);mesh.name=`sample-${material.name}`;mesh.receiveShadow=true;mesh.castShadow=!material.userData.ground&&!material.transparent;mesh.userData.parts=[...b.parts];group.add(mesh);
     }
     this.boxGeometry.dispose();

@@ -52,8 +52,9 @@ test('real WebGL game: drive, stamp, map, pause, save, reset and touch layout', 
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()); });
   page.on('requestfailed', request => failedRequests.push(`${request.method()} ${request.url()}: ${request.failure()?.errorText}`));
-  await page.goto('/');
+  await page.goto(process.env.TAIPEI_SAMPLE==='refined'?'/?sample=refined':'/');
   await page.waitForFunction(() => window.taipeiRide);
+  if(process.env.TAIPEI_SAMPLE==='refined')await page.waitForFunction(()=>window.taipeiRide.snapshot().view.sample?.ready);
   await assertLiveWebGL(page, testInfo);
   await capture(page, testInfo, '01-welcome-webgl');
   await startJourney(page, { isMobile });
@@ -105,6 +106,7 @@ test('real WebGL game: drive, stamp, map, pause, save, reset and touch layout', 
   await assertLiveWebGL(page, testInfo);
   await page.reload();
   await page.waitForFunction(() => window.taipeiRide);
+  if(process.env.TAIPEI_SAMPLE==='refined')await page.waitForFunction(()=>window.taipeiRide.snapshot().view.sample?.ready);
   expect((await snapshot(page)).stamps).toContain('market');
   expect((await snapshot(page)).night).toBe(true);
   await startJourney(page, { isMobile });

@@ -19,7 +19,7 @@ function recordErrors(page) {
   return errors;
 }
 async function enterMenu(page) {
-  await page.goto('/');
+  await page.goto(process.env.TAIPEI_SAMPLE==='refined'?'/?sample=refined':'/');
   await page.waitForFunction(() => window.taipeiRide?.snapshot().menu);
   await expect.poll(async () => (await snapshot(page)).menu.phase).toBe('menu');
   expect((await snapshot(page)).renderMode).toBe('3d');
