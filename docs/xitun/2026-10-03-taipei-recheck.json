@@ -1,0 +1,209 @@
+{
+  "note": "Single paired regression run of unchanged Taipei art after adding Xitun. Not a new three-repeat performance claim; use the original performance report for repeated low/ultra comparisons.",
+  "runs": [
+    {
+      "device": {
+        "gpuTimerSupported": true,
+        "gpuTimerDisjoint": false,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M6, Unspecified Version)",
+        "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "css": [
+          1440,
+          830
+        ],
+        "buffer": [
+          792,
+          456
+        ],
+        "quality": "low",
+        "scale": 0.55
+      },
+      "previousCommit": "2c8b0cb5fbadbbdd299ecac400b1f8987dcb00ab",
+      "version": "optimized-sample",
+      "moving": false,
+      "setup": "Identical production scene, fixed CSS viewport and explicit buffer scale recorded in device metadata, twenty warm-up frames, 120 render-to-next-rAF intervals. Synchronous render()+gl.finish() cost is recorded separately and never converted to FPS. Frame-indexed motion is only a controlled rendering fixture, not the application simulation. One final pixel-verification render is unmeasured.",
+      "summary": {
+        "meanFrameCadenceMs": 16.665833333333328,
+        "medianFrameCadenceMs": 16.699999999999818,
+        "p95FrameCadenceMs": 16.799999999999727,
+        "observedFrameHz": 60.003000150007516,
+        "meanRenderCallMs": 2.26666667064031,
+        "warmShadowRefreshes": 1,
+        "measuredShadowRefreshes": 0
+      },
+      "meanGpuMs": 0.9496425333333334,
+      "meanSubmitMs": 2.2525000055631,
+      "frameCount": 120
+    },
+    {
+      "device": {
+        "gpuTimerSupported": true,
+        "gpuTimerDisjoint": false,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M6, Unspecified Version)",
+        "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "css": [
+          1440,
+          830
+        ],
+        "buffer": [
+          792,
+          456
+        ],
+        "quality": "low",
+        "scale": 0.55
+      },
+      "previousCommit": "2c8b0cb5fbadbbdd299ecac400b1f8987dcb00ab",
+      "version": "main-baseline",
+      "moving": false,
+      "setup": "Identical production scene, fixed CSS viewport and explicit buffer scale recorded in device metadata, twenty warm-up frames, 120 render-to-next-rAF intervals. Synchronous render()+gl.finish() cost is recorded separately and never converted to FPS. Frame-indexed motion is only a controlled rendering fixture, not the application simulation. One final pixel-verification render is unmeasured.",
+      "summary": {
+        "meanFrameCadenceMs": 16.66583333333333,
+        "medianFrameCadenceMs": 16.699999999999818,
+        "p95FrameCadenceMs": 16.700000000000273,
+        "observedFrameHz": 60.00300015000751,
+        "meanRenderCallMs": 2.116666665673256,
+        "warmShadowRefreshes": 0,
+        "measuredShadowRefreshes": 0
+      },
+      "meanGpuMs": 0.7407255416666667,
+      "meanSubmitMs": 2.1033333291610083,
+      "frameCount": 120
+    },
+    {
+      "device": {
+        "gpuTimerSupported": true,
+        "gpuTimerDisjoint": false,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M6, Unspecified Version)",
+        "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "css": [
+          1440,
+          830
+        ],
+        "buffer": [
+          792,
+          456
+        ],
+        "quality": "low",
+        "scale": 0.55
+      },
+      "previousCommit": "2c8b0cb5fbadbbdd299ecac400b1f8987dcb00ab",
+      "version": "previous-sample",
+      "moving": false,
+      "setup": "Identical production scene, fixed CSS viewport and explicit buffer scale recorded in device metadata, twenty warm-up frames, 120 render-to-next-rAF intervals. Synchronous render()+gl.finish() cost is recorded separately and never converted to FPS. Frame-indexed motion is only a controlled rendering fixture, not the application simulation. One final pixel-verification render is unmeasured.",
+      "summary": {
+        "meanFrameCadenceMs": 16.66583333333333,
+        "medianFrameCadenceMs": 16.699999999999818,
+        "p95FrameCadenceMs": 16.700000000000273,
+        "observedFrameHz": 60.0030001500075,
+        "meanRenderCallMs": 2.4783333361148836,
+        "warmShadowRefreshes": 1,
+        "measuredShadowRefreshes": 0
+      },
+      "meanGpuMs": 1.07737555,
+      "meanSubmitMs": 2.4700000027815503,
+      "frameCount": 120
+    },
+    {
+      "device": {
+        "gpuTimerSupported": true,
+        "gpuTimerDisjoint": false,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M6, Unspecified Version)",
+        "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "css": [
+          1440,
+          830
+        ],
+        "buffer": [
+          792,
+          456
+        ],
+        "quality": "low",
+        "scale": 0.55
+      },
+      "previousCommit": "2c8b0cb5fbadbbdd299ecac400b1f8987dcb00ab",
+      "version": "optimized-sample",
+      "moving": true,
+      "setup": "Identical production scene, fixed CSS viewport and explicit buffer scale recorded in device metadata, twenty warm-up frames, 120 render-to-next-rAF intervals. Synchronous render()+gl.finish() cost is recorded separately and never converted to FPS. Frame-indexed motion is only a controlled rendering fixture, not the application simulation. One final pixel-verification render is unmeasured.",
+      "summary": {
+        "meanFrameCadenceMs": 16.664999999999996,
+        "medianFrameCadenceMs": 16.699999999999818,
+        "p95FrameCadenceMs": 16.700000000000273,
+        "observedFrameHz": 60.00600060006002,
+        "meanRenderCallMs": 2.703333329161008,
+        "warmShadowRefreshes": 1,
+        "measuredShadowRefreshes": 120
+      },
+      "meanGpuMs": 0.9856904833333333,
+      "meanSubmitMs": 2.6883333295583727,
+      "frameCount": 120
+    },
+    {
+      "device": {
+        "gpuTimerSupported": true,
+        "gpuTimerDisjoint": false,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M6, Unspecified Version)",
+        "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "css": [
+          1440,
+          830
+        ],
+        "buffer": [
+          792,
+          456
+        ],
+        "quality": "low",
+        "scale": 0.55
+      },
+      "previousCommit": "2c8b0cb5fbadbbdd299ecac400b1f8987dcb00ab",
+      "version": "previous-sample",
+      "moving": true,
+      "setup": "Identical production scene, fixed CSS viewport and explicit buffer scale recorded in device metadata, twenty warm-up frames, 120 render-to-next-rAF intervals. Synchronous render()+gl.finish() cost is recorded separately and never converted to FPS. Frame-indexed motion is only a controlled rendering fixture, not the application simulation. One final pixel-verification render is unmeasured.",
+      "summary": {
+        "meanFrameCadenceMs": 16.665833333333328,
+        "medianFrameCadenceMs": 16.699999999999818,
+        "p95FrameCadenceMs": 16.700000000000273,
+        "observedFrameHz": 60.003000150007516,
+        "meanRenderCallMs": 3.401666675011317,
+        "warmShadowRefreshes": 1,
+        "measuredShadowRefreshes": 120
+      },
+      "meanGpuMs": 1.1736449583333333,
+      "meanSubmitMs": 3.3833333402872086,
+      "frameCount": 120
+    },
+    {
+      "device": {
+        "gpuTimerSupported": true,
+        "gpuTimerDisjoint": false,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M6, Unspecified Version)",
+        "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "css": [
+          1440,
+          830
+        ],
+        "buffer": [
+          792,
+          456
+        ],
+        "quality": "low",
+        "scale": 0.55
+      },
+      "previousCommit": "2c8b0cb5fbadbbdd299ecac400b1f8987dcb00ab",
+      "version": "main-baseline",
+      "moving": true,
+      "setup": "Identical production scene, fixed CSS viewport and explicit buffer scale recorded in device metadata, twenty warm-up frames, 120 render-to-next-rAF intervals. Synchronous render()+gl.finish() cost is recorded separately and never converted to FPS. Frame-indexed motion is only a controlled rendering fixture, not the application simulation. One final pixel-verification render is unmeasured.",
+      "summary": {
+        "meanFrameCadenceMs": 16.66666666666666,
+        "medianFrameCadenceMs": 16.699999999999818,
+        "p95FrameCadenceMs": 16.799999999999727,
+        "observedFrameHz": 60.00000000000003,
+        "meanRenderCallMs": 2.0824999968210856,
+        "warmShadowRefreshes": 0,
+        "measuredShadowRefreshes": 0
+      },
+      "meanGpuMs": 0.717740475,
+      "meanSubmitMs": 2.0716666638851167,
+      "frameCount": 120
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 import {defineConfig} from '@playwright/test';
-import base from './playwright.config.mjs';
+import base from './playwright.regression.config.mjs';
 export default defineConfig({
  ...base,
  outputDir:'qa/hardware-regression-results',

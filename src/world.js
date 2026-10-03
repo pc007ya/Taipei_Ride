@@ -69,11 +69,11 @@ export function collides(x,y,obstacles,radius=PERSON.radius) {
  return obstacles.some(o=>bodiesOverlap(probe,obstacleBody(o)));
 }
 export function createPlayer() { return {...START,speed:0,distance:0,collisionCooldown:0}; }
-export function nearbyLandmark(p) { return LANDMARKS.find(l=>distance(p,l)<45) || null; }
+export function nearbyLandmark(p,landmarks=LANDMARKS) { return landmarks.find(l=>distance(p,l)<45) || null; }
 export function canCollect(p,l) { return !!l&&distance(p,l)<45&&Math.abs(p.speed)<8; }
-export function cleanProgress(data) {
+export function cleanProgress(data,landmarks=LANDMARKS) {
   if(!data||typeof data!=='object') return { stamps:[],distance:0,night:false };
-  return {stamps:Array.isArray(data.stamps)?[...new Set(data.stamps.filter(id=>LANDMARKS.some(l=>l.id===id)))]:[],distance:typeof data.distance==='number'&&Number.isFinite(data.distance)?clamp(data.distance,0,1e9):0,night:data.night===true};
+  return {stamps:Array.isArray(data.stamps)?[...new Set(data.stamps.filter(id=>landmarks.some(l=>l.id===id)))]:[],distance:typeof data.distance==='number'&&Number.isFinite(data.distance)?clamp(data.distance,0,1e9):0,night:data.night===true};
 }
 export function syncVehicle(player,vehicle){Object.assign(vehicle,{x:player.x,y:player.y,angle:player.angle,speed:player.speed});}
 const finite=(n,fallback=0)=>typeof n==='number'&&Number.isFinite(n)?n:fallback;
@@ -114,7 +114,7 @@ export function updateWalker(p,input,dt,world,vehicle=null,traffic=[]){
  const steps=Math.max(1,Math.ceil(safeDt(dt)*120)),step=safeDt(dt)/steps;let hit=false;
  for(let i=0;i<steps;i++)hit=moveActor(p,input,step,'walking',world,blockers).hit||hit;return hit;
 }
-const TRAFFIC_ROUTES=[[160,480,1120,1440],[480,160,1440,1120],[160,160,1440,1440]];
+const TRAFFIC_ROUTES=[[160,480,1120,1440],[480,160,1440,1120],[160,160,1440,1440],[160,800,1440,1120]];
 export function trafficPose(route,t){
  const [a,b,c,d]=TRAFFIC_ROUTES[route]||TRAFFIC_ROUTES[0],left=a+TRAFFIC_LANE_OFFSET,right=c-TRAFFIC_LANE_OFFSET,top=b+TRAFFIC_LANE_OFFSET,bottom=d-TRAFFIC_LANE_OFFSET,r=28,w=right-left-2*r,h=bottom-top-2*r,arc=Math.PI*r/2,perimeter=2*(w+h)+4*arc;
  let n=((finite(t)%1)+1)%1*perimeter;

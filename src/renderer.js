@@ -4,6 +4,7 @@ import { BUILDING } from './scale.js';
 import { createLookController } from './camera-controls.js';
 const mix=(hex,k)=>{const n=parseInt(hex.slice(1),16);return `rgb(${[n>>16,(n>>8)&255,n&255].map(v=>Math.round(Math.min(255,v*k))).join(',')})`;};
 export class Renderer {
+  dispose(){this.world=null;return {geometries:0,materials:0,textures:0,skeletons:0};}
   constructor(canvas,world) { this.canvas=canvas;this.lookController=createLookController();this.ctx=canvas.getContext('2d',{alpha:false});this.world=world;this.camera={x:800,y:515};this.width=0;this.height=0;this.scale=1;this.night=false;this.time=0;this.resize(); }
   setQuality(preset){this.quality=['auto','low','medium','high','ultra'].includes(preset)?preset:'auto';this.resize();}
   setAppearance(id){this.appearance=id==='river'?'river':id==='sunset'?'sunset':'forest';this.playerShirt={river:'#536e98',sunset:'#b97545',forest:'#6b8b77'}[this.appearance];}
@@ -55,7 +56,8 @@ export class Renderer {
       this.box(o.x,o.y+o.d-5,o.w,5,1.5,'#d7d1b6',30.5);
       if(o.seed>.52){this.box(o.x+5,o.y+o.d-2,o.w*.28,1,21,'#89918a',1);for(let h=2;h<22;h+=1.5)this.line([this.p(o.x+5,o.y+o.d,h),this.p(o.x+5+o.w*.28,o.y+o.d,h)],'#626f6a',.5);}
       this.box(o.x+3,o.y+o.d-1,o.w-6,1,6,'#356f68',24);
-      this.text(o.sign?`小巷${o.sign}`:'日和雜貨',o.x+o.w/2,o.y+o.d+1,26.5,'#fff1c4',7);
+      if(o.kind==='opera'){for(const [u,z]of [[.2,28],[.5,58],[.78,28]]){const points=Array.from({length:20},(_,i)=>{const a=i/20*Math.PI*2;return this.p(o.x+o.w*u+Math.cos(a)*18,o.y+o.d+.2,z+Math.sin(a)*23);});this.poly(points,'#456b72');}this.ground(o.x+15,o.y+15,o.w-30,o.d-30,'#73955e');}
+      this.text(this.world.sceneId==='xitun'?o.sign:o.sign?`小巷${o.sign}`:'日和雜貨',o.x+o.w/2,o.y+o.d+1,26.5,'#fff1c4',7);
 
     }
     if(o.type==='tower') {
@@ -150,25 +152,25 @@ export class Renderer {
     const c=this.ctx,w=this.width,h=this.height;
     c.clearRect(0,0,w,h);c.fillStyle=night?'#112932':'#8cac9e';c.fillRect(0,0,w,h);
     this.ground(-120,-120,1900,1900,night?'#284741':'#87a782');
-    this.ground(-170,-120,270,1900,night?'#204a59':'#65a2a7');
+    if(this.world.sceneId!=='xitun'){this.ground(-170,-120,270,1900,night?'#204a59':'#65a2a7');
     for(let i=0;i<60;i++){const yy=i*32+Math.sin(this.time+i)*3;this.line([this.p(-110,yy),this.p(55,yy-12)],night?'#2f61703b':'#a7d0c34a',1);}
-    this.ground(91,70,31,1480,night?'#586b66':'#c6c6a5');
+    this.ground(91,70,31,1480,night?'#586b66':'#c6c6a5');}
     for(let ix=0;ix<4;ix++)for(let iy=0;iy<4;iy++){const x=ROADS[ix]+35,y=ROADS[iy]+35;this.ground(x,y,250,250,night?'#59615c':'#c7cbb6');if(Math.abs(x+125-player.x)<550&&Math.abs(y+125-player.y)<550)for(let t=0;t<=250;t+=10){this.line([this.p(x+t,y),this.p(x+t,y+250)],night?'#465450':'#acb3a6',.45);this.line([this.p(x,y+t),this.p(x+250,y+t)],night?'#465450':'#acb3a6',.45);}for(const edge of [0,250]){this.line([this.p(x+edge,y),this.p(x+edge,y+250)],night?'#859087':'#e2dfca',1.4);this.line([this.p(x,y+edge),this.p(x+250,y+edge)],night?'#859087':'#e2dfca',1.4);}}
-    this.ground(1165,1165,225,225,night?'#345a45':'#779a68');
-    this.ground(844,844,231,231,night?'#6c7471':'#d4d8c9');
+    if(this.world.sceneId!=='xitun'){this.ground(1165,1165,225,225,night?'#345a45':'#779a68');
+    this.ground(844,844,231,231,night?'#6c7471':'#d4d8c9');}else{this.ground(848,848,232,232,'#86a270');this.ground(903,910,136,108,'#5797a1');}
     for(const road of ROADS){this.ground(road-ROAD_WIDTH/2,80,ROAD_WIDTH,1440,night?'#35494e':'#718382');this.ground(80,road-ROAD_WIDTH/2,1440,ROAD_WIDTH,night?'#35494e':'#718382');}
     for(const road of ROADS)for(let t=90;t<1510;t+=34){if(ROADS.some(r=>Math.abs(r-t)<52))continue;this.ground(road-1,t,2,14,night?'#ada574':'#ded9a5');this.ground(t,road-1,14,2,night?'#ada574':'#ded9a5');}
     for(const x of ROADS)for(const y of ROADS)for(let i=0;i<6;i++) {
       const col=night?'#72837e':'#d7ddd1';this.ground(x-23+i*8,y-42,4,9,col);this.ground(x-23+i*8,y+34,4,9,col);this.ground(x-42,y-23+i*8,9,4,col);this.ground(x+34,y-23+i*8,9,4,col);
     }
     // Open riverside seating and simple public park paths.
-    for(let i=0;i<8;i++)this.box(105,200+i*155,8,22,5,'#be9c71');
+    if(this.world.sceneId!=='xitun')for(let i=0;i<8;i++)this.box(105,200+i*155,8,22,5,'#be9c71');
     this.ground(870,1034,188,11,night?'#9ba39a':'#eef1df');
-    for(const l of LANDMARKS)if(!(target?.type==='quest'&&distance(l,target)<15))this.landmark(l,stamps.includes(l.id),target?.id===l.id);
+    for(const l of (this.world.landmarks||LANDMARKS))if(!(target?.type==='quest'&&distance(l,target)<15))this.landmark(l,stamps.includes(l.id),target?.id===l.id);
     if(target?.type==='quest')this.landmark(target,state.quest?.stage==='completed',true);
-    const walking=state.mode==='walking',carrying=state.quest?.stage==='carrying'||state.quest?.stage==='deliver';
+    const walking=state.mode==='walking',carrying=state.hasQuest!==false&&(state.quest?.stage==='carrying'||state.quest?.stage==='deliver');
     const pedestrians=Array.from({length:20},(_,i)=>({x:ROADS[i%5]+45,y:180+(i*91+this.time*(i%2?5:-5)+1300)%1220,angle:i%2?Math.PI/2:-Math.PI/2,speed:5,type:'npc'}));
-    const items=[...pedestrians,...this.world.buildings,...this.world.trees,...(this.world.lamps||[]),...this.world.stalls,...traffic,...Object.values(QUEST_STATIONS).map(l=>({x:l.x+29,y:l.y,type:'npc'})),...(walking?[{...state.vehicle,type:'parked-scooter',cargo:false}]:[]),{...player,type:walking?'walker':'player',cargo:carrying}].filter(o=>this.visible(o));
+    const items=[...pedestrians,...this.world.buildings,...this.world.trees,...(this.world.lamps||[]),...this.world.stalls,...traffic,...(this.world.hasQuest===false?[]:Object.values(QUEST_STATIONS)).map(l=>({x:l.x+29,y:l.y,type:'npc'})),...(walking?[{...state.vehicle,type:'parked-scooter',cargo:false}]:[]),{...player,type:walking?'walker':'player',cargo:carrying}].filter(o=>this.visible(o));
     items.sort((a,b)=>(a.x+a.y+(a.w||0)*.5+(a.d||0)*.5)-(b.x+b.y+(b.w||0)*.5+(b.d||0)*.5));
     for(const o of items) {
       if(o.type==='building'||o.type==='tower'||o.type==='temple'||o.type==='hall'){this.shadow(o);this.drawBuilding(o,player);}
@@ -188,9 +190,10 @@ export function drawMap(canvas,state,large=false) {
   const size=Math.min(rect.width,rect.height);if(!size)return;
   if(canvas.width!==Math.round(size*dpr)){canvas.width=Math.round(size*dpr);canvas.height=Math.round(size*dpr);}
   c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,size,size);const pad=large?26:9,scale=(size-pad*2)/1600;const p=(x,y)=>[pad+x*scale,pad+y*scale];
-  c.fillStyle='#153c3b';c.fillRect(0,0,size,size);c.fillStyle='#245764';c.fillRect(0,0,pad+90*scale,size);
+  c.fillStyle='#153c3b';c.fillRect(0,0,size,size);if(state.sceneId!=='xitun'){c.fillStyle='#245764';c.fillRect(0,0,pad+90*scale,size);}else{c.fillStyle='#6a946b';c.fillRect(...p(848,848),232*scale,232*scale);}
   c.strokeStyle='#63817b';c.lineWidth=large?7:3;for(const r of ROADS){c.beginPath();c.moveTo(...p(r,80));c.lineTo(...p(r,1520));c.stroke();c.beginPath();c.moveTo(...p(80,r));c.lineTo(...p(1520,r));c.stroke();}
-  for(const l of LANDMARKS){const [x,y]=p(l.x,l.y);const done=state.stamps.includes(l.id);c.fillStyle=done?'#dff8a0':l.color;c.beginPath();c.arc(x,y,large?7:4,0,Math.PI*2);c.fill();if(state.target?.id===l.id){c.strokeStyle='#f9f4dc';c.lineWidth=1.5;c.beginPath();c.arc(x,y,large?12:7,0,Math.PI*2);c.stroke();}if(large){c.font='600 13px "Noto Sans CJK TC", sans-serif';c.fillStyle='#f0efd6';c.textAlign=l.x>1200?'right':'left';c.fillText(`${done?'✓ ':''}${l.name}`,x+(l.x>1200?-13:13),y-12);}}
+  if(state.sceneId==='xitun'){c.strokeStyle='#d5b56d';c.lineWidth=large?8:4;c.beginPath();c.moveTo(...p(110,800));c.lineTo(...p(1490,800));c.stroke();if(large){c.fillStyle='#efd797';c.font='12px sans-serif';c.textAlign='left';c.fillText('台灣大道 四段 ← → 三段',...p(690,760));}}
+  for(const l of (state.landmarks||LANDMARKS)){const [x,y]=p(l.x,l.y);const done=state.stamps.includes(l.id);c.fillStyle=done?'#dff8a0':l.color;c.beginPath();c.arc(x,y,large?7:4,0,Math.PI*2);c.fill();if(state.target?.id===l.id){c.strokeStyle='#f9f4dc';c.lineWidth=1.5;c.beginPath();c.arc(x,y,large?12:7,0,Math.PI*2);c.stroke();}if(large){c.font='600 13px "Noto Sans CJK TC", sans-serif';c.fillStyle='#f0efd6';c.textAlign=l.x>1200?'right':'left';c.fillText(`${done?'✓ ':''}${l.name}`,x+(l.x>1200?-13:13),y+(state.sceneId==='xitun'&&l.type==='hospital'?32:-12));}}
   if(state.target?.type==='quest'){const [qx,qy]=p(state.target.x,state.target.y);c.fillStyle='#ffdc88';c.fillRect(qx-5,qy-5,10,10);c.strokeStyle='#fff7d4';c.lineWidth=1.5;c.strokeRect(qx-8,qy-8,16,16);if(large){c.font='600 12px sans-serif';c.textAlign='left';c.fillStyle='#ffedbe';c.fillText(state.target.name,qx+12,qy+17);}}
   if(state.mode==='walking'&&state.vehicle){const [vx,vy]=p(state.vehicle.x,state.vehicle.y);c.fillStyle='#94d7ff';c.fillRect(vx-4,vy-4,8,8);if(large){c.font='600 11px sans-serif';c.fillStyle='#bce9ff';c.textAlign='left';c.fillText('停放機車',vx+8,vy+4);}}
   const [x,y]=p(state.player.x,state.player.y);c.save();c.translate(x,y);c.rotate(state.player.angle);c.fillStyle='#f7ffcb';c.beginPath();c.moveTo(large?11:7,0);c.lineTo(large?-6:-4,large?-6:-4);c.lineTo(large?-3:-2,0);c.lineTo(large?-6:-4,large?6:4);c.closePath();c.fill();c.restore();

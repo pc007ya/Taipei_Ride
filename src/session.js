@@ -12,9 +12,10 @@ const stages=['available','pickup','carrying','deliver','completed'];
 const finite=(n,fallback=0)=>typeof n==='number'&&Number.isFinite(n)?n:fallback;
 const heading=n=>{n=finite(n,START.angle);return Math.atan2(Math.sin(n),Math.cos(n));};
 function safePose(raw,world,kind){
- if(!raw||typeof raw!=='object'||!Number.isFinite(raw.x)||!Number.isFinite(raw.y))return {...START};
+ const start=world.start||START;
+ if(!raw||typeof raw!=='object'||!Number.isFinite(raw.x)||!Number.isFinite(raw.y))return {...start};
  const pose={x:raw.x,y:raw.y,angle:heading(raw.angle)};
- return poseCollides(pose,kind,world)?{...START}:pose;
+ return poseCollides(pose,kind,world)?{...start}:pose;
 }
 function cleanQuest(raw){
  let stage=stages.includes(raw?.stage)?raw.stage:'available';
@@ -27,22 +28,22 @@ function cleanQuest(raw){
  return {stage,rideDistance,rewardClaimed};
 }
 export function createSession(world,raw=null){
- const isV2=raw?.version===2;
+ const isV2=raw?.version===2,start=world.start||START,landmarks=world.landmarks||LANDMARKS;
  const legacy=raw&&typeof raw==='object'&&!Array.isArray(raw)&&!('version'in raw);
- const progress=cleanProgress(isV2||legacy?raw:null);
+ const progress=cleanProgress(isV2||legacy?raw:null,landmarks);
  const player=createPlayer();player.distance=clamp(finite(isV2?raw?.player?.distance:progress.distance),0,1e9);
  const mode=isV2&&raw.mode==='walking'?'walking':'riding';
- const vehicle={...safePose(isV2?raw.vehicle:START,world,'riding'),speed:0};
+ const vehicle={...safePose(isV2?raw.vehicle:start,world,'riding'),speed:0};
  let actor=mode==='riding'?vehicle:safePose(raw?.player,world,'walking');
  if(mode==='walking'&&bodiesOverlap(collisionBody(actor,'walking'),collisionBody(vehicle,'scooter'))){
   actor=findDismountPosition(vehicle,world);
-  if(!actor){Object.assign(vehicle,START);actor=findDismountPosition(vehicle,world)||{x:START.x+20,y:START.y,angle:START.angle};}
+  if(!actor){Object.assign(vehicle,start);actor=findDismountPosition(vehicle,world)||{x:start.x+20,y:start.y,angle:start.angle};}
  }
  Object.assign(player,{x:actor.x,y:actor.y,angle:actor.angle,speed:0});
  return {version:2,player,vehicle,mode,stamps:progress.stamps,night:progress.night,
   quest:cleanQuest(isV2?raw.quest:null),coins:isV2&&Number.isInteger(raw.coins)&&raw.coins>=0?Math.min(raw.coins,999999):0,
-  activity:isV2?(raw.activity==='explore'?'explore':'quest'):legacy?'explore':'quest',
-  selectedLandmark:isV2&&LANDMARKS.some(l=>l.id===raw.selectedLandmark)?raw.selectedLandmark:LANDMARKS.find(l=>!progress.stamps.includes(l.id))?.id||null};
+  activity:world.hasQuest===false?'explore':isV2?(raw.activity==='explore'?'explore':'quest'):legacy?'explore':'quest',
+  selectedLandmark:isV2&&landmarks.some(l=>l.id===raw.selectedLandmark)?raw.selectedLandmark:landmarks.find(l=>!progress.stamps.includes(l.id))?.id||null};
 }
 export function serializeSession(state){
  return {version:2,player:{x:state.player.x,y:state.player.y,angle:state.player.angle,distance:state.player.distance},vehicle:{x:state.vehicle.x,y:state.vehicle.y,angle:state.vehicle.angle},mode:state.mode,stamps:[...state.stamps],night:state.night,quest:{...state.quest},coins:state.coins,activity:state.activity,selectedLandmark:state.target?.id||state.selectedLandmark||null};

@@ -1,3 +1,4 @@
+import {disposeGroups} from './scene-resources.js';
 import {sampleEnabled,installArtSample,isSampleStreetBuilding} from './art-sample.js';
 import * as THREE from '../vendor/three.module.js';
 import { ROADS, ROAD_WIDTH, LANDMARKS } from './world.js';
@@ -230,8 +231,8 @@ export class AdaptiveRenderScale{
  }
 }
 export class Renderer3D{
-  constructor(canvas,world){
-    this.canvas=canvas;this.lookController=createLookController();
+  constructor(canvas,world,cityFactory=createCity){
+    this.sceneId=world.sceneId;this.sceneStart=world.start||{x:800,y:515};this.canvas=canvas;this.lookController=createLookController();
     // Context creation is the only capability check. If it fails, main.js uses Canvas 2D.
     this.renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
     this.renderScale=new AdaptiveRenderScale(globalThis.devicePixelRatio||1);this.renderer.setPixelRatio(this.renderScale.scale);this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.1;
@@ -241,12 +242,19 @@ export class Renderer3D{
     this.cameraBlockers=createCameraBlockers(world);
     this.light=new THREE.HemisphereLight(0xd9efe7,0x5e7154,2.4);this.scene.add(this.light);
     this.sun=new THREE.DirectionalLight(0xffefcb,2.3);this.sun.position.set(-200,500,-150);this.scene.add(this.sun);
-    this.sample={enabled:sampleEnabled(),ready:false,error:null};const created=createCity(this.sample.enabled?{...world,buildings:world.buildings.filter(b=>!isSampleStreetBuilding(b))}:world);this.scene.add(created.city);this.glass=created.glass;this.lampMaterial=created.lampMaterial;this.foliage=created.foliage;this.softOccluders=created.softOccluders;
+    this.sample={enabled:sampleEnabled(),ready:false,error:null};const created=cityFactory(this.sample.enabled&&world.sceneId!=='xitun'?{...world,buildings:world.buildings.filter(b=>!isSampleStreetBuilding(b))}:world);this.scene.add(created.city);this.glass=created.glass;this.lampMaterial=created.lampMaterial;this.foliage=created.foliage;this.softOccluders=created.softOccluders;
     this.scooter=createScooter();this.scene.add(this.scooter);this.carMeshes=[];
-    this.markers=[...LANDMARKS,...Object.values(QUEST_STATIONS)].map(l=>{const g=new THREE.Group();g.position.set(l.x,1,l.y);const ring=new THREE.Mesh(new THREE.TorusGeometry(12,.45,8,40),new THREE.MeshBasicMaterial({color:l.color}));ring.rotation.x=Math.PI/2;g.add(ring);const pin=new THREE.Mesh(new THREE.OctahedronGeometry(2.5,0),new THREE.MeshBasicMaterial({color:l.color}));pin.position.y=23;g.add(pin);this.scene.add(g);return {l,g,ring,pin};});
-    this.questResidents=Object.values(QUEST_STATIONS).map((station,i)=>{const npc=createWalker([0xc78062,0x719baa,0xa29968][i],true,i===1?'female':'male');npc.name=station.id;applyVehiclePose(npc,{x:station.x+29,y:station.y,angle:Math.PI});this.scene.add(npc);return npc;});
-    this.pedestrians=Array.from({length:20},(_,i)=>{const g=createPedestrian([0xc9815e,0x799aab,0xcdbd78][i%3]);this.scene.add(g);return g;});
+    this.markers=[...(world.landmarks||LANDMARKS),...(world.hasQuest===false?[]:Object.values(QUEST_STATIONS))].map(l=>{const g=new THREE.Group();g.position.set(l.x,1,l.y);const ring=new THREE.Mesh(new THREE.TorusGeometry(12,.45,8,40),new THREE.MeshBasicMaterial({color:l.color}));ring.rotation.x=Math.PI/2;g.add(ring);const pin=new THREE.Mesh(new THREE.OctahedronGeometry(2.5,0),new THREE.MeshBasicMaterial({color:l.color}));pin.position.y=23;g.add(pin);this.scene.add(g);return {l,g,ring,pin};});
+    this.questResidents=(world.hasQuest===false?[]:Object.values(QUEST_STATIONS)).map((station,i)=>{const npc=createWalker([0xc78062,0x719baa,0xa29968][i],true,i===1?'female':'male');npc.name=station.id;applyVehiclePose(npc,{x:station.x+29,y:station.y,angle:Math.PI});this.scene.add(npc);return npc;});
+    this.pedestrians=Array.from({length:world.sceneId==='xitun'?10:20},(_,i)=>{const g=createPedestrian([0xc9815e,0x799aab,0xcdbd78][i%3]);this.scene.add(g);return g;});
     this.time=0;this.lastNight=null;this.look=new THREE.Vector3(800,10,515);this.heading=-Math.PI/2;this.resize();if(this.sample.enabled)this.artSample=installArtSample(this,world);
+  }
+  dispose(){
+    if(this.disposed)return this.disposal;
+    this.disposed=true;const cached=this.artSample?.dispose()||[];
+    const roots=[this.scene,...cached,...Object.values(this.characterModels||{}).flatMap(m=>[m.scooter,m.walker]),...Object.values(this.previewCharacters||{})];
+    this.disposal=disposeGroups(roots);this.sun.shadow.dispose();this.scene.clear();this.renderer.renderLists.dispose();this.renderer.dispose();this.renderer.forceContextLoss();
+    this.cameraBlockers=[];this.foliage=[];this.softOccluders=[];this.carMeshes=[];this.pedestrians=[];this.questResidents=[];this.characterModels={};this.previewCharacters={};mats.clear();return this.disposal;
   }
   resize(width=innerWidth,height=innerHeight,pixelRatio=globalThis.devicePixelRatio||1){
     this.cssWidth=Math.max(1,Math.round(width));this.cssHeight=Math.max(1,Math.round(height));
@@ -282,7 +290,7 @@ export class Renderer3D{
     const atmosphere=intro&&this.menuView!=='character'?'dusk':night?'night':'day';
     if(this.lastAtmosphere!==atmosphere){this.lastAtmosphere=atmosphere;this.lastNight=night;const dusk=atmosphere==='dusk',bg=dusk?0xc19b9e:night?0x112835:PALETTE.sky;this.scene.background.set(bg);this.scene.fog.color.set(bg);this.light.intensity=dusk?1.65:night?.95:2.4;this.sun.intensity=dusk?1.5:night?.5:2.3;this.sun.color.set(dusk?0xffc18a:night?0xb9cddc:0xffefcb);this.glass.emissiveIntensity=dusk?.65:night?1.15:0;this.lampMaterial.emissiveIntensity=dusk?1:night?2:.1;for(const entry of this.softOccluders)if(entry.mesh.userData.lampLight)entry.mesh.material.emissiveIntensity=dusk?1:night?2:.1;this.renderer.toneMappingExposure=dusk?1.05:night?1.05:1.1;if(this.skyDome)this.skyDome.visible=dusk;}
 
-    const walking=state.mode==='walking',carrying=state.quest?.stage==='carrying'||state.quest?.stage==='deliver';this.scooter.getObjectByName('delivery-cargo').visible=carrying&&!walking;applyVehiclePose(this.scooter,walking?state.vehicle:player);setMountedRiderVisible(this.scooter,!walking);
+    const walking=state.mode==='walking',carrying=state.hasQuest!==false&&(state.quest?.stage==='carrying'||state.quest?.stage==='deliver');this.scooter.getObjectByName('delivery-cargo').visible=carrying&&!walking;applyVehiclePose(this.scooter,walking?state.vehicle:player);setMountedRiderVisible(this.scooter,!walking);
     if(walking){if(!this.walker){this.walker=createWalker(undefined,true,this.character||'male');applyCharacterPalette(this.walker,this.appearance||'forest');this.scene.add(this.walker);}this.walker.visible=true;this.walker.getObjectByName('delivery-cargo').visible=carrying;applyVehiclePose(this.walker,player);for(const leg of this.walker.children)if(leg.name.endsWith('-leg')||leg.name.endsWith('-arm'))leg.rotation.z=Math.sin(this.time*9+(leg.name.startsWith('left')?0:Math.PI)+(leg.name.endsWith('-arm')?Math.PI:0))*Math.min(.35,Math.abs(player.speed)*.018);}
     else if(this.walker)this.walker.visible=false;
     let delta=player.angle-this.heading;delta=Math.atan2(Math.sin(delta),Math.cos(delta));this.heading+=delta*Math.min(1,dt*3.5);
@@ -295,7 +303,8 @@ export class Renderer3D{
     const aim=cameraAimTarget(player,viewHeading,this.camera.position);
     if(this.camera.position.distanceTo(worldToScene(player.x,player.y,11))<40||Math.hypot(this.camera.position.x-player.x,this.camera.position.z-player.y)<24)this.look.copy(aim);
     else this.look.lerp(aim,Math.min(1,dt*6));
-    if(intro){const phase=this.introProgress*Math.PI*2,angle=.6+Math.sin(phase)*.1;this.camera.position.set(1241+Math.cos(angle)*330,190+Math.cos(phase)*8,631+Math.sin(angle)*330);this.look.set(1210,140,677);}
+    if(intro&&this.sceneId==='xitun'){const angle=.6+Math.sin(this.introProgress*Math.PI*2)*.1;this.camera.position.set(1280+Math.cos(angle)*290,165,1280+Math.sin(angle)*290);this.look.set(1280,45,1280);}
+    if(intro&&this.sceneId!=='xitun'){const phase=this.introProgress*Math.PI*2,angle=.6+Math.sin(phase)*.1;this.camera.position.set(1241+Math.cos(angle)*330,190+Math.cos(phase)*8,631+Math.sin(angle)*330);this.look.set(1210,140,677);}
     const previewActive=intro&&this.menuView==='character';this.scooter.visible=!previewActive;if(this.walker)this.walker.visible=walking&&!previewActive;for(const preview of Object.values(this.previewCharacters||{}))preview.visible=previewActive&&preview===this.previewCharacter;if(previewActive){this.camera.position.set(848,18,534);this.look.set(815,9.5,515);}
     const arrival=typeof this.arrivalProgress==='number',resident=this.questResidents?.[0];
     if(arrival&&resident){const p=this.arrivalProgress,ease=x=>x*x*(3-2*x),blend=p<.22?ease(p/.22):p>.8?1-ease((p-.8)/.2):1,base=chaseCameraPose(player,player.angle,innerWidth<650),npc=resident.position,visit=new THREE.Vector3(npc.x-24,17,npc.z+18),greeting=new THREE.Vector3(npc.x,12.2,npc.z);this.camera.position.copy(base.position).lerp(visit,blend);this.look.copy(base.target).lerp(greeting,blend);}

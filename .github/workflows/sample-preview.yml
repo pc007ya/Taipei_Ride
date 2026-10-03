@@ -56,3 +56,29 @@ jobs:
             sample-results/**/*.png
             sample-results/**/*.json
           retention-days: 14
+  scenes:
+    name: Xitun scene and Taipei regressions (software WebGL)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/browser/install-ci-font.mjs
+      - name: Run scene switching, continuous boulevard and full game regressions
+        env:
+          TAIPEI_SAMPLE: refined
+        run: npx playwright test --config=playwright.regression.config.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: xitun-and-taipei-regression-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
