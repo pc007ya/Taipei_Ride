@@ -22,8 +22,14 @@ export async function activateWithKeyboard(page, selector) {
   await page.keyboard.press('Enter');
 }
 
-export async function clickCurrentTarget(page, selector, isMobile = false) {
+export async function clickCurrentTarget(page, selector, isMobile = false, allowFinishedArrival = false) {
   const bounds = await page.locator(selector).boundingBox();
+  // A short arrival may finish between the read-only state check and layout
+  // measurement on software WebGL. Accept only its verified natural completion.
+  if (!bounds && allowFinishedArrival) {
+    expect(await page.evaluate(() => Boolean(window.taipeiRide.snapshot().cinematic))).toBe(false);
+    return;
+  }
   expect(bounds, `${selector} must be visible before native input`).not.toBeNull();
   const x = bounds.x + bounds.width / 2, y = bounds.y + bounds.height / 2;
   if (isMobile) await page.touchscreen.tap(x, y);
@@ -40,7 +46,7 @@ export async function startJourney(page, { isMobile = false } = {}) {
   await page.locator('#start').click();
   await expect.poll(() => page.evaluate(() => window.taipeiRide.snapshot().started)).toBe(true);
   if (await page.evaluate(() => Boolean(window.taipeiRide.snapshot().cinematic))) {
-    await clickCurrentTarget(page, '#skip-arrival', isMobile);
+    await clickCurrentTarget(page, '#skip-arrival', isMobile, true);
   }
   await expect.poll(() => page.evaluate(() => {
     const state = window.taipeiRide.snapshot();

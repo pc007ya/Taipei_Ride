@@ -64,9 +64,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - group: interface
+          - group: interface-desktop
             timeout: 30
-            tests: game.spec.mjs interface.spec.mjs menu.spec.mjs
+            tests: game.spec.mjs interface.spec.mjs menu.spec.mjs --project=desktop
+          - group: interface-portrait
+            timeout: 30
+            tests: game.spec.mjs interface.spec.mjs menu.spec.mjs --project=portrait
+          - group: interface-landscape
+            timeout: 30
+            tests: game.spec.mjs interface.spec.mjs menu.spec.mjs --project=landscape
           - group: collisions-models
             timeout: 30
             tests: collision.spec.mjs models.spec.mjs proportions.spec.mjs
